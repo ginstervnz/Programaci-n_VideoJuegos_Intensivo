@@ -27,7 +27,7 @@ class Pong(Game):
             settings.PADDLE_Y_OFFSET,
             settings.PADDLE_WIDTH,
             settings.PADDLE_HEIGHT,
-            is_ai=True  # Flag to indicate that player 1 is controlled by a human
+            is_ai=False  # Flag to indicate that player 1 is controlled by a human
         )
         self.player2 = Paddle(
             settings.VIRTUAL_WIDTH - settings.PADDLE_WIDTH - settings.PADDLE_X_OFFSET,

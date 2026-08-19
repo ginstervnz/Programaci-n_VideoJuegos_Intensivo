@@ -22,30 +22,32 @@ from src.rendering import render_table
 class PlayState(BaseState):
     def enter(self, pong) -> None:
         self.pong = pong
+        pygame.mixer.music.load("assets/sounds/Final_Match_Point.mp3") #Music for the game
+        pygame.mixer.music.play(loops=-1)
 
     def update(self, dt: float) -> None:
         pong = self.pong
 
         if pong.player2.is_ai: # Check if player 2 is controlled by AI
-            centro_paleta: float = pong.player2.y + (pong.player2.height / 2)
+            center_paddle: float = pong.player2.y + (pong.player2.height / 2)
             centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
             dead_zone: float = pong.player2.height / 3
             
-            if centro_paleta < (centro_pelota - dead_zone):
+            if center_paddle < (centro_pelota - dead_zone):
                 pong.player2.vy = settings.PADDLE_SPEED
-            elif centro_paleta > (centro_pelota + dead_zone):
+            elif center_paddle > (centro_pelota + dead_zone):
                 pong.player2.vy = -settings.PADDLE_SPEED
             else:
                 pong.player2.vy = 0.0
 
         if pong.player1.is_ai: # Check if player 1 is controlled by AI
-            centro_paleta: float = pong.player1.y + (pong.player1.height / 2)
+            center_paddle: float = pong.player1.y + (pong.player1.height / 2)
             centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
             dead_zone: float = pong.player1.height / 3
 
-            if centro_paleta < (centro_pelota - dead_zone):
+            if center_paddle < (centro_pelota - dead_zone):
                 pong.player1.vy = settings.PADDLE_SPEED
-            elif centro_paleta > (centro_pelota + dead_zone):
+            elif center_paddle > (centro_pelota + dead_zone):
                 pong.player1.vy = -settings.PADDLE_SPEED
             else:
                 pong.player1.vy = 0.0      
