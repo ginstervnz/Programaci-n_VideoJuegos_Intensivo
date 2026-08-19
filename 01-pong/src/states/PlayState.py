@@ -25,6 +25,31 @@ class PlayState(BaseState):
 
     def update(self, dt: float) -> None:
         pong = self.pong
+
+        if pong.player2.is_ai: # Check if player 2 is controlled by AI
+            centro_paleta: float = pong.player2.y + (pong.player2.height / 2)
+            centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+            dead_zone: float = pong.player2.height / 3
+            
+            if centro_paleta < (centro_pelota - dead_zone):
+                pong.player2.vy = settings.PADDLE_SPEED
+            elif centro_paleta > (centro_pelota + dead_zone):
+                pong.player2.vy = -settings.PADDLE_SPEED
+            else:
+                pong.player2.vy = 0.0
+
+        if pong.player1.is_ai: # Check if player 1 is controlled by AI
+            centro_paleta: float = pong.player1.y + (pong.player1.height / 2)
+            centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+            dead_zone: float = pong.player1.height / 3
+
+            if centro_paleta < (centro_pelota - dead_zone):
+                pong.player1.vy = settings.PADDLE_SPEED
+            elif centro_paleta > (centro_pelota + dead_zone):
+                pong.player1.vy = -settings.PADDLE_SPEED
+            else:
+                pong.player1.vy = 0.0      
+
         pong.player1.update(dt)
         pong.player2.update(dt)
         pong.ball.update(dt)
@@ -104,6 +129,10 @@ class PlayState(BaseState):
         pong = self.pong
 
         if input_id in ("p1_up", "p1_down"):
+
+            if pong.player1.is_ai: # Check if player 1 is controlled by AI
+                return
+            
             if input_data.pressed:
                 pong.player1.vy = (
                     -settings.PADDLE_SPEED if input_id == "p1_up" else settings.PADDLE_SPEED
@@ -113,6 +142,10 @@ class PlayState(BaseState):
                 if pong.player1.vy == sign * settings.PADDLE_SPEED:
                     pong.player1.vy = 0
         elif input_id in ("p2_up", "p2_down"):
+
+            if pong.player2.is_ai: # Check if player 2 is controlled by AI
+                return
+
             if input_data.pressed:
                 pong.player2.vy = (
                     -settings.PADDLE_SPEED if input_id == "p2_up" else settings.PADDLE_SPEED
