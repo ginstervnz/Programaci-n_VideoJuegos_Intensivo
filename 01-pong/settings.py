@@ -23,6 +23,11 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_s, "p1_down")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "p2_up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "p2_down")
 
+# Additional keyboard actions to toggle AI control for players
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_z, "toggle_ai_p1")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_x, "toggle_ai_p2")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_c, "toggle_ai_both")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_v, "toggle_no_ai") 
 TITLE = "Pong"
 
 # Size of our actual window
@@ -51,12 +56,24 @@ SOUNDS = {
     "paddle_hit": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "paddle_hit.wav"),
     "wall_hit": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "wall_hit.wav"),
     "score": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "score.wav"),
+    "music": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "Final_Match_Point.mp3"),
 }
 
 FONTS = {
     "score": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 32),
-    "large": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 16),
+    "large": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 30),
+    "medium": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 14),
 }
 
 COLOR_BACKGROUND = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
+
+#New constants for AI-controlled paddles and color red for IA controlled paddles
+PLAYER1_AI_DEFAULT = False
+PLAYER2_AI_DEFAULT = True
+AI_VISION_P1 = 0.75  
+AI_VISION_P2 = 0.25
+COLOR_RED = (255, 0, 0)
+COLOR_GREEN = (0, 255, 0)
+COLOR_YELLOW = (255, 255, 0)  
+COLOR_GRAY = (150, 150, 150)

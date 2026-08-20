@@ -22,9 +22,44 @@ from src.rendering import render_table
 class PlayState(BaseState):
     def enter(self, pong) -> None:
         self.pong = pong
+        if settings.SOUNDS["music"].get_num_channels() == 0:
+            settings.SOUNDS["music"].set_volume(0.5)
+            settings.SOUNDS["music"].play(loops=-1)  # Play background music in a loop with reduced volume
+            
 
     def update(self, dt: float) -> None:
         pong = self.pong
+
+        if pong.player2.is_ai: # Check if player 2 is controlled by AI
+            if pong.ball.vx > 0 and pong.ball.x > (settings.VIRTUAL_WIDTH * settings.AI_VISION_P2):
+                center_paddle: float = pong.player2.y + (pong.player2.height / 2)
+                centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+                dead_zone: float = pong.player2.height / 3
+                
+                if center_paddle < (centro_pelota - dead_zone):
+                    pong.player2.vy = settings.PADDLE_SPEED
+                elif center_paddle > (centro_pelota + dead_zone):
+                    pong.player2.vy = -settings.PADDLE_SPEED
+                else:
+                    pong.player2.vy = 0.0
+            else:
+                pong.player2.vy = 0.0
+
+        if pong.player1.is_ai: # Check if player 1 is controlled by AI
+            if pong.ball.vx < 0 and pong.ball.x < (settings.VIRTUAL_WIDTH * settings.AI_VISION_P1):
+                center_paddle: float = pong.player1.y + (pong.player1.height / 2)
+                centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+                dead_zone: float = pong.player1.height / 3
+                        
+                if center_paddle < (centro_pelota - dead_zone):
+                    pong.player1.vy = settings.PADDLE_SPEED
+                elif center_paddle > (centro_pelota + dead_zone):
+                    pong.player1.vy = -settings.PADDLE_SPEED
+                else:
+                    pong.player1.vy = 0.0
+            else:
+                pong.player1.vy = 0.0
+
         pong.player1.update(dt)
         pong.player2.update(dt)
         pong.ball.update(dt)
@@ -39,14 +74,16 @@ class PlayState(BaseState):
             self._score(scorer=2)
             return
 
-        if ball_rect.top <= 0:
+        if ball_rect.top <= 0 and pong.ball.vy < 0: #Bug Fix: Added a condition to check if the ball is moving upwards before bouncing off the top wall
             settings.SOUNDS["wall_hit"].play()
             pong.ball.y = 0
             pong.ball.vy *= -1
-        elif ball_rect.bottom >= settings.VIRTUAL_HEIGHT:
+        elif ball_rect.bottom >= settings.VIRTUAL_HEIGHT and pong.ball.vy > 0:
             settings.SOUNDS["wall_hit"].play()
             pong.ball.y = settings.VIRTUAL_HEIGHT - pong.ball.height
             pong.ball.vy *= -1
+
+    
 
         # Refreshed since a wall bounce above may have changed ball.y.
         ball_rect = pong.ball.get_rect()
@@ -57,11 +94,13 @@ class PlayState(BaseState):
             settings.SOUNDS["paddle_hit"].play()
             pong.ball.x = player1_rect.right
             pong.ball.vx *= -1.03
+            pong.ball.color = pong.player1.color #Change the color of the ball to match the paddle that hit it
             self._randomize_vy()
         elif ball_rect.colliderect(player2_rect):
             settings.SOUNDS["paddle_hit"].play()
             pong.ball.x = player2_rect.left - pong.ball.width
             pong.ball.vx *= -1.03
+            pong.ball.color = pong.player2.color #Change the color of the ball to match the paddle that hit it
             self._randomize_vy()
 
     def _randomize_vy(self) -> None:
@@ -88,6 +127,7 @@ class PlayState(BaseState):
 
         if pong.player1_score == settings.MAX_POINTS or pong.player2_score == settings.MAX_POINTS:
             pong.winning_player = scorer
+            settings.SOUNDS["music"].stop() #Transition to the done state, stopping the music when a player wins
             self.state_machine.change("done", pong=pong)
             return
 
@@ -104,6 +144,10 @@ class PlayState(BaseState):
         pong = self.pong
 
         if input_id in ("p1_up", "p1_down"):
+
+            if pong.player1.is_ai: # Check if player 1 is controlled by AI
+                return
+            
             if input_data.pressed:
                 pong.player1.vy = (
                     -settings.PADDLE_SPEED if input_id == "p1_up" else settings.PADDLE_SPEED
@@ -113,6 +157,10 @@ class PlayState(BaseState):
                 if pong.player1.vy == sign * settings.PADDLE_SPEED:
                     pong.player1.vy = 0
         elif input_id in ("p2_up", "p2_down"):
+
+            if pong.player2.is_ai: # Check if player 2 is controlled by AI
+                return
+
             if input_data.pressed:
                 pong.player2.vy = (
                     -settings.PADDLE_SPEED if input_id == "p2_up" else settings.PADDLE_SPEED
