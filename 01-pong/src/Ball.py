@@ -21,6 +21,7 @@ class Ball:
         self.height: float = size
         self.vx: float = 0.0
         self.vy: float = 0.0
+        self.color: tuple[int, int, int] = settings.COLOR_WHITE #Color white for the ball
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), self.width, self.height)
@@ -34,6 +35,7 @@ class Ball:
         self.y = y
         self.vx = 0.0
         self.vy = 0.0
+        self.color = settings.COLOR_WHITE #Color white for the ball
 
     def render(self, surface: pygame.Surface) -> None:
-        pygame.draw.rect(surface, settings.COLOR_WHITE, self.get_rect())
+        pygame.draw.rect(surface, self.color, self.get_rect())  #Can change the color of the ball if needed, currently set to white

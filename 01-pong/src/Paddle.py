@@ -14,14 +14,15 @@ import settings
 
 
 class Paddle:
-    def __init__(self, x: float, y: float, width: float, height: float, is_ai: bool = False) -> None:
+    def __init__(self, x: float, y: float, width: float, height: float, is_ai: bool = False, ai_color: tuple[int, int, int] = settings.COLOR_RED) -> None:
         self.x: float = x
         self.y: float = y
         self.width: float = width
         self.height: float = height
         self.vy: float = 0.0
         self.is_ai: bool = is_ai # Flag to indicate if the paddle is controlled by AI
-        self.color: tuple[int, int, int] = (255, 0, 0) if self.is_ai else (255, 255, 255) #Color red for AI-controlled paddle, white for human-controlled paddle
+        self.ai_color: tuple[int, int, int] = ai_color
+        self.color: tuple[int, int, int] = self.ai_color if self.is_ai else settings.COLOR_WHITE #Color red for AI-controlled paddle, white for human-controlled paddle
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), self.width, self.height)
