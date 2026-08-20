@@ -25,7 +25,16 @@ class ServeState(BaseState):
         self.pong = pong
 
     def render(self, surface: pygame.Surface) -> None:
-        render_table(surface, self.pong)
+        pong = self.pong
+        render_table(surface,pong)
+
+        is_both_ai = pong.player1.is_ai and pong.player2.is_ai
+        is_none_ai = not pong.player1.is_ai and not pong.player2.is_ai
+        color_z = pong.player1.ai_color if (pong.player1.is_ai and not pong.player2.is_ai) else settings.COLOR_WHITE
+        color_x = pong.player2.ai_color if (pong.player2.is_ai and not pong.player1.is_ai) else settings.COLOR_WHITE
+        color_c = settings.COLOR_YELLOW if is_both_ai else settings.COLOR_WHITE
+        color_v = settings.COLOR_GRAY if is_none_ai else settings.COLOR_WHITE
+
         render_text(
             surface,
             "Press enter to serve",
@@ -41,7 +50,7 @@ class ServeState(BaseState):
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH / 2,
             (settings.VIRTUAL_HEIGHT / 2), 
-            settings.COLOR_WHITE,
+            color_z,
             center=True,
         )
         render_text(
@@ -49,8 +58,8 @@ class ServeState(BaseState):
             "Press X for Player 2 AI",
             settings.FONTS["medium"], 
             settings.VIRTUAL_WIDTH / 2,
-            (settings.VIRTUAL_HEIGHT / 2) + 40,
-            settings.COLOR_WHITE,
+            (settings.VIRTUAL_HEIGHT / 2) + 20,
+            color_x,
             center=True,
         )
         render_text(
@@ -58,8 +67,8 @@ class ServeState(BaseState):
             "Press C to toggle BOTH AI",
             settings.FONTS["medium"], 
             settings.VIRTUAL_WIDTH / 2,
-            (settings.VIRTUAL_HEIGHT / 2) + 70,
-            settings.COLOR_WHITE,
+            (settings.VIRTUAL_HEIGHT / 2) + 40,
+            color_c,
             center=True,
         )
         render_text(
@@ -67,8 +76,8 @@ class ServeState(BaseState):
             "Press V No IA",
             settings.FONTS["medium"], 
             settings.VIRTUAL_WIDTH / 2,
-            (settings.VIRTUAL_HEIGHT / 2) + 100, 
-            settings.COLOR_WHITE,
+            (settings.VIRTUAL_HEIGHT / 2) + 60, 
+            color_v,
             center=True,
         )
 

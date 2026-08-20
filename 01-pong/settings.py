@@ -61,7 +61,7 @@ SOUNDS = {
 
 FONTS = {
     "score": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 32),
-    "large": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 16),
+    "large": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 30),
     "medium": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 14),
 }
 
@@ -75,3 +75,5 @@ AI_VISION_P1 = 0.75
 AI_VISION_P2 = 0.25
 COLOR_RED = (255, 0, 0)
 COLOR_GREEN = (0, 255, 0)
+COLOR_YELLOW = (255, 255, 0)  
+COLOR_GRAY = (150, 150, 150)
