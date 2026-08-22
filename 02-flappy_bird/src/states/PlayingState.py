@@ -57,7 +57,7 @@ class PlayingState(BaseState):
         self.ghost_timer = enter_params.get("ghost_timer", 0.0)
         self.bird.is_ghost = self.ghost_timer > 0
         self.bird.ghost_timer = self.ghost_timer
-
+        
     def update(self, dt: float) -> None:
         self.bird.update(dt)
         self.world.update(dt)
@@ -75,17 +75,11 @@ class PlayingState(BaseState):
             self.grace_timer -= dt        
 
         for pu in self.world.powerups:
-            if pu.in_play and pu.collides(self.bird.get_rect()):
-                pu.in_play = False 
-                settings.SOUNDS["powerup"].play()
-                if not self.bird.is_ghost:
-                    pygame.mixer.music.pause()
-                    settings.SOUNDS["ghost_form"].play(loops=-1)
-                self.bird.is_ghost = True
-                self.ghost_timer = settings.TIME_BIRD_FORM 
-                self.bird.ghost_timer = settings.TIME_BIRD_FORM
+            if pu.collides(self.bird.get_rect()):
+                pu.take(self)
 
-        self.world.powerups = [pu for pu in self.world.powerups if pu.in_play]
+        self.world.powerups = [p for p in self.world.powerups if p.active]
+
 
         is_dead = False
         sonido_muerte = "explosion"
@@ -95,16 +89,21 @@ class PlayingState(BaseState):
             for log_pair in self.world.logs:
                 if log_pair.collides(self.bird.get_rect()):
                     is_dead = True
+                    
                     if type(log_pair).__name__ == "MovingLogPair":
+                       
                         sonido_muerte = "dead_log_bit"
+                    elif type(log_pair).__name__ == "ShiftingLogPair":
+                    
+                        sonido_muerte = "explosion"
                     
                     break 
         if is_dead:
             settings.SOUNDS[sonido_muerte].play() 
-            settings.SOUNDS["hurt"].play()
+            
             settings.SOUNDS["ghost_form"].stop() 
-            pygame.mixer.music.unpause()         
-            self.state_machine.change("count_down")
+            
+            self.state_machine.change("game_over", score=self.score, death_sound=sonido_muerte)
             return
         
         if self.world.update_scored(self.bird.get_rect()):
@@ -127,7 +126,7 @@ class PlayingState(BaseState):
             surface,
             f" {self.mode.capitalize()}",
             settings.FONTS["flappy"],
-            settings.VIRTUAL_WIDTH - 100, 
+            settings.VIRTUAL_WIDTH - 120, 
             10,
             settings.COLOR_WHITE,
             shadowed=True,
@@ -137,6 +136,7 @@ class PlayingState(BaseState):
         if input_id == "jump" and input_data.pressed:
             self.bird.jump()
         if input_id == "confirm" and input_data.pressed:
+            settings.SOUNDS["select"].play()
             self.state_machine.change(
                 "pause",
                 bird=self.bird,

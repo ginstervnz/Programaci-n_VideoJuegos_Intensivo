@@ -29,8 +29,8 @@ class TitleScreenState(BaseState):
         self.world.render(surface)
         render_text(
             surface,
-            "Flappy Bird",
-            settings.FONTS["flappy"],
+            "FLAPPY BIRD",
+            settings.FONTS["title"],
             settings.VIRTUAL_WIDTH / 2,
             settings.VIRTUAL_HEIGHT / 3,
             settings.COLOR_WHITE,
@@ -40,7 +40,7 @@ class TitleScreenState(BaseState):
         render_text(
             surface,
             "Press Enter to start",
-            settings.FONTS["medium"],
+            settings.FONTS["sub_title"],
             settings.VIRTUAL_WIDTH / 2,
             2 * settings.VIRTUAL_HEIGHT / 3,
             settings.COLOR_WHITE,
@@ -50,4 +50,5 @@ class TitleScreenState(BaseState):
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "confirm" and input_data.pressed:
-            self.state_machine.change("count_down")
+            settings.SOUNDS["select"].play()
+            self.state_machine.change("serve")

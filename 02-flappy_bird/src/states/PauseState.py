@@ -25,17 +25,25 @@ class PauseState(BaseState):
         self.ghost_timer = enter_params.get("ghost_timer", 0.0)
         self.grace_timer = enter_params.get("grace_timer", 0.0)
         self.selected_option = 0
+        pygame.mixer.music.pause()
+        pygame.mixer.pause()
+        settings.SOUNDS["pause_theme"].play(loops=-1)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
        
             if input_id == "down" and input_data.pressed:
-                settings.SOUNDS["score"].play()
+                settings.SOUNDS["change_select"].play()
                 self.selected_option = (self.selected_option + 1) % len(self.options)
             elif input_id == "up" and input_data.pressed:
-                settings.SOUNDS["score"].play()
+                settings.SOUNDS["change_select"].play()
                 self.selected_option = (self.selected_option - 1) % len(self.options)
             elif input_id == "confirm" and input_data.pressed:
-                if self.selected_option == 0:  # Resume
+                settings.SOUNDS["select"].play()
+                if self.selected_option == 0: #Resume
+                    settings.SOUNDS["pause_theme"].stop()
+                    pygame.mixer.unpause()
+                    if not self.bird.is_ghost:
+                        pygame.mixer.music.unpause()  
                     self.state_machine.change(
                         "count_down",
                         bird=self.bird,
@@ -46,10 +54,11 @@ class PauseState(BaseState):
                         grace_timer=self.grace_timer
                     )
                 elif self.selected_option == 1:  # Restart
-                    settings.SOUNDS["ghost_form"].stop()
+                    settings.SOUNDS["pause_theme"].stop()
+                    pygame.mixer.stop()
                     pygame.mixer.music.load(settings.MUSIC["normal_theme"])
                     pygame.mixer.music.play(loops=-1)
-                    self.state_machine.change("count_down", mode=self.mode)
+                    self.state_machine.change("serve")
                 elif self.selected_option == 2:  # Quit
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
 
@@ -77,11 +86,12 @@ class PauseState(BaseState):
             )
         render_text(
             surface, 
-            "PAUSE", 
-            settings.FONTS["flappy"], 
+            f"PAUSE", 
+            settings.FONTS["title"], 
             settings.VIRTUAL_WIDTH // 2, 
             settings.VIRTUAL_HEIGHT // 3, 
             settings.COLOR_WHITE, 
+            shadowed=True,
             center=True
             )
         start_y = (settings.VIRTUAL_HEIGHT // 2) + 20
@@ -90,9 +100,10 @@ class PauseState(BaseState):
             render_text(
                 surface, 
                 option, 
-                settings.FONTS["medium"], 
+                settings.FONTS["sub_title"], 
                 settings.VIRTUAL_WIDTH // 2, 
                 start_y + (i * 30), 
-                color, 
+                color,
+                shadowed=True, 
                 center=True
                 )

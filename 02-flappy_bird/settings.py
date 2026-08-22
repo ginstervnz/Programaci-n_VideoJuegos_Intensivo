@@ -46,7 +46,7 @@ LOGS_SMOOTHNESS = 6.0
 LOGS_BIT_POSIBILITY = 0.3
 LOGS_MOVING_POSIBILITY = 0.5
 
-PROBABILITY_POWERUP = 0.50
+PROBABILITY_POWERUP = 0.08
 TIME_INVULNERABLE = 1.0
 TIME_BIRD_FORM = 7.0
 
@@ -67,6 +67,8 @@ TIME_TO_SPAWN_LOGS = 1.5
 MEDIUM_TEXT_SIZE = 18
 HUGE_TEXT_SIZE = 56
 FLAPPY_TEXT_SIZE = 28
+SUB_TITLE_TEXT = 22
+TITLE_TEXT = 28
 
 BASE_DIR = Path(__file__).parent
 
@@ -88,7 +90,11 @@ SOUNDS = {
     "score": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "score.wav"),
     "powerup": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "power_up.mp3"),
     "ghost_form": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "Gost_Bird.mp3"),
-    "dead_log_bit": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "dead_2.mp3")
+    "dead_log_bit": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "dead_2.wav"),
+    "change_select": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "change_select.mp3"),
+    "select": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "blipSelect.wav"),
+    "pause_theme": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pause_menu.mp3"),
+    "game_over": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "game_over.mp3"),
 }
 
 MUSIC = {
@@ -104,6 +110,8 @@ FONTS = {
     "flappy": pygame.font.Font(
         BASE_DIR / "assets" / "fonts" / "flappy.ttf", FLAPPY_TEXT_SIZE
     ),
+    "sub_title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "sud_title.ttf", SUB_TITLE_TEXT),
+    "title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Title.otf", TITLE_TEXT)
 }
 
 COLOR_BACKGROUND = (0, 0, 0)

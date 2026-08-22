@@ -3,6 +3,7 @@ import settings
 from src.LogPair import LogPair
 from src.MovingLogPair import MovingLogPair
 from src.ShiftingLogPair import ShiftingLogPair
+from gale.factory import AbstractFactory
 
 class NormalSpawnStrategy:
     def update(self, world, dt: float) -> None:
@@ -65,10 +66,11 @@ class HardSpawnStrategy:
                 
             else:
                 new_log = LogPair(settings.VIRTUAL_WIDTH, y, base_gap)
+
                 if random.random() < settings.PROBABILITY_POWERUP:
                     pu_x = settings.VIRTUAL_WIDTH + 15
                     pu_y = y + settings.LOG_HEIGHT + (base_gap / 2) - 32 
-                    nuevo_powerup = world.powerup_factory.create(pu_x, pu_y)
+                    nuevo_powerup = world.powerups_abstract_factory.get_factory("GhostPowerUp").create(pu_x, pu_y)
                     world.powerups.append(nuevo_powerup)
 
             world.logs.append(new_log)

@@ -18,9 +18,9 @@ from gale.factory import Factory
 
 import settings
 from src.LogPair import LogPair
-from src.PowerUp import PowerUp
 from src.strategies.WorldStrategies import NormalSpawnStrategy
-
+from gale.factory import AbstractFactory
+import src.powerups
 
 class World:
     def __init__(self, generate_logs: bool = False, spawn_strategy=None) -> None:
@@ -32,9 +32,9 @@ class World:
         self.logs_spawn_timer: float = 0.0
         self.last_log_y: float = -settings.LOG_HEIGHT + random.randint(0, 80) + 20
         self.log_pair_factory: Factory = Factory(LogPair)
+        self.powerups_abstract_factory = AbstractFactory("src.powerups")
         self.powerups = []
-        self.powerup_factory = Factory(PowerUp)
-
+       
     def reset(self, generate_logs: bool) -> None:
         self.generate_logs = generate_logs
 
@@ -65,7 +65,7 @@ class World:
        self.logs = [log_pair for log_pair in self.logs if not log_pair.is_out_of_game()]
        for pu in self.powerups:
             pu.update(scaled_dt)
-       self.powerups = [pu for pu in self.powerups if not pu.is_out_of_game()]
+       self.powerups = [pu for pu in self.powerups if pu.active]
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(settings.TEXTURES["background"], (round(self.background_x), 0))
