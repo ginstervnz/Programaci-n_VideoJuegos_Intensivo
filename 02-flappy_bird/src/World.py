@@ -15,11 +15,14 @@ from typing import List
 import pygame
 
 from gale.factory import Factory
+from gale.factory import AbstractFactory
 
 import settings
 from src.LogPair import LogPair
+from src.MovingLogPair import MovingLogPair
+from src.ShiftingLogPair import ShiftingLogPair
 from src.strategies.WorldStrategies import NormalSpawnStrategy
-from gale.factory import AbstractFactory
+
 import src.powerups
 
 class World:
@@ -32,6 +35,8 @@ class World:
         self.logs_spawn_timer: float = 0.0
         self.last_log_y: float = -settings.LOG_HEIGHT + random.randint(0, 80) + 20
         self.log_pair_factory: Factory = Factory(LogPair)
+        self.moving_log_factory: Factory = Factory(MovingLogPair)
+        self.shifting_log_factory: Factory = Factory(ShiftingLogPair)
         self.powerups_abstract_factory = AbstractFactory("src.powerups")
         self.powerups = []
        

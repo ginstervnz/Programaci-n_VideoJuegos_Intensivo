@@ -1,9 +1,7 @@
 import random
 import settings
-from src.LogPair import LogPair
-from src.MovingLogPair import MovingLogPair
-from src.ShiftingLogPair import ShiftingLogPair
-from gale.factory import AbstractFactory
+
+
 
 class NormalSpawnStrategy:
     def update(self, world, dt: float) -> None:
@@ -38,13 +36,16 @@ class HardSpawnStrategy:
             chance = random.random()
     
             if chance < settings.LOGS_BIT_POSIBILITY:
+                log_type = "biting"
                 base_gap = random.randint(settings.LOGS_GAP, settings.LOGS_GAP + 25)
             elif chance < settings.LOGS_MOVING_POSIBILITY:
+                log_type = "shifting"
                 base_gap = random.randint(settings.LOGS_GAP - 10, settings.LOGS_GAP + 15)
             else:
+                log_type = "normal"
                 base_gap = random.randint(60, settings.LOGS_GAP)
             
-            safe_bottom_y = settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT - settings.LOG_HEIGHT - base_gap - 100
+            safe_bottom_y = settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT - settings.LOG_HEIGHT - base_gap - 50 
             max_y_diff = int(60 * (self.next_spawn_time / 1.5))
             
             y = max(
@@ -56,16 +57,15 @@ class HardSpawnStrategy:
             )
             world.last_log_y = y
 
-            if chance < settings.LOGS_BIT_POSIBILITY:
+            if log_type == "biting":
                 speed = random.uniform(1.2, 3.5) 
-                new_log = MovingLogPair(settings.VIRTUAL_WIDTH, y, base_gap, speed)
+                new_log = world.moving_log_factory.create(settings.VIRTUAL_WIDTH, y, properties={"gap": base_gap, "speed": speed})
                 
-            elif chance < settings.LOGS_MOVING_POSIBILITY:
+            elif log_type == "shifting":
                 target_y = random.randint(-settings.LOG_HEIGHT + 30, int(safe_bottom_y))
-                new_log = ShiftingLogPair(settings.VIRTUAL_WIDTH, y, base_gap, target_y)
-                
+                new_log = world.shifting_log_factory.create(settings.VIRTUAL_WIDTH, y, properties={"gap": base_gap, "target_y": target_y})
             else:
-                new_log = LogPair(settings.VIRTUAL_WIDTH, y, base_gap)
+                new_log = world.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, properties={"gap": base_gap})
 
                 if random.random() < settings.PROBABILITY_POWERUP:
                     pu_x = settings.VIRTUAL_WIDTH + 15

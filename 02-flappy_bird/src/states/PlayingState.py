@@ -95,7 +95,7 @@ class PlayingState(BaseState):
                         sonido_muerte = "dead_log_bit"
                     elif type(log_pair).__name__ == "ShiftingLogPair":
                     
-                        sonido_muerte = "explosion"
+                        sonido_muerte = "hurt"
                     
                     break 
         if is_dead:
@@ -135,6 +135,17 @@ class PlayingState(BaseState):
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "jump" and input_data.pressed:
             self.bird.jump()
+        elif input_id == "left":
+            if input_data.pressed:
+                self.bird.moving_left = True
+            elif input_data.released:
+                self.bird.moving_left = False
+                
+        elif input_id == "right":
+            if input_data.pressed:
+                self.bird.moving_right = True
+            elif input_data.released:
+                self.bird.moving_right = False
         if input_id == "confirm" and input_data.pressed:
             settings.SOUNDS["select"].play()
             self.state_machine.change(

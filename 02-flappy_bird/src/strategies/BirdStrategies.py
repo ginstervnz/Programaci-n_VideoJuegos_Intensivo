@@ -1,6 +1,7 @@
 import pygame
 import settings
 
+
 class NormalMovementStrategy:
     def update(self, bird, dt: float) -> None:
         bird.vy += settings.GRAVITY * dt
@@ -29,10 +30,10 @@ class HardMovementStrategy:
             bird.jumping = False
         bird.y += bird.vy * dt
 
-        keys = pygame.key.get_pressed()
-        if keys[settings.KEY_LEFT]:
+        
+        if getattr(bird, 'moving_left', False):
             bird.x -= self.current_speed * dt   
-        if keys[settings.KEY_RIGHT]:
+        elif getattr(bird, 'moving_right', False):
             bird.x += self.current_speed * dt
             
         bird.x = max(0, min(bird.x, settings.VIRTUAL_WIDTH - bird.width))

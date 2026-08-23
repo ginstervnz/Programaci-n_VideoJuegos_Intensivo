@@ -23,8 +23,8 @@ input_handler.InputHandler.set_mouse_click_action(input_handler.MOUSE_BUTTON_1, 
 #New input actions for the game
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "down")
-KEY_LEFT = pygame.K_a
-KEY_RIGHT = pygame.K_d
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "left")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "right")
 
 TITLE = "Flappy Bird"
 
