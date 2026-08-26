@@ -23,13 +23,11 @@ class CountDownState(BaseState):
         self.world = enter_params.get("world", World(generate_logs=False))
         self.bird = enter_params.get("bird", None)
         self.score = enter_params.get("score", 0)
-        self.world.reset(False)
         self.counter = 3
         self.timer = 0.0
         self.ghost_timer = enter_params.get("ghost_timer", 0.0)
         self.grace_timer = enter_params.get("grace_timer", 0.0)
-        if self.world:
-            self.world.reset(False)
+        
 
     def update(self, dt: float) -> None:
         self.timer += dt
@@ -47,13 +45,18 @@ class CountDownState(BaseState):
                     grace_timer=self.grace_timer,
                 )
                 return
-        if self.bird is None:
+        if self.bird is None and self.world is not None:
             self.world.update(dt)
 
     def render(self, surface: pygame.Surface) -> None:
-        self.world.render(surface)
+        if self.world is not None:
+            self.world.render(surface)
+        else:
+            surface.blit(settings.TEXTURES["background"], (0, 0))
+            surface.blit(settings.TEXTURES["ground"], (0, settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT))
         if self.bird:
             self.bird.render(surface)
+        
         render_text(
             surface,
             str(self.counter),

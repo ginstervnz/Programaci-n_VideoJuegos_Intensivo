@@ -32,6 +32,12 @@ class Paddle:
         # The paddle only move horizontally
         self.vx = 0
 
+        #Flag is Sticky
+        self.is_sticky = False
+
+        #Flag is Rocket
+        self.has_rockets = False
+
     def resize(self, size: int) -> None:
         self.size = size
         self.width = (self.size + 1) * 32
@@ -54,4 +60,28 @@ class Paddle:
             self.x = min(settings.VIRTUAL_WIDTH - self.width, next_x)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.blit(self.texture, (self.x, self.y), self.frames[self.skin][self.size])
+
+        #Change skin paddle
+        if getattr(self, 'has_rockets', False):
+            current_texture = settings.TEXTURES["paddle_rocket"]
+        elif getattr(self, 'is_sticky', False):
+            current_texture = settings.TEXTURES["paddle_sticky"]
+        else:
+            current_texture = self.texture
+
+        surface.blit(current_texture, (self.x, self.y), self.frames[self.skin][self.size]) 
+
+        #Render torrets
+        if getattr(self, 'has_rockets', False):
+            left_cannon = settings.TEXTURES["rocket_left"]
+            right_cannon = settings.TEXTURES["rocket_right"]
+            
+            left_x = self.x
+            left_y = self.y - left_cannon.get_height() + 4
+            
+            right_x = self.x + self.width - right_cannon.get_width()
+            right_y = self.y - right_cannon.get_height() + 4
+
+            surface.blit(left_cannon, (left_x, left_y))
+            surface.blit(right_cannon, (right_x, right_y))
+        

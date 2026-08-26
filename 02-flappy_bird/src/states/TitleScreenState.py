@@ -51,4 +51,4 @@ class TitleScreenState(BaseState):
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "confirm" and input_data.pressed:
             settings.SOUNDS["select"].play()
-            self.state_machine.change("serve")
+            self.state_machine.change("serve",world=self.world)

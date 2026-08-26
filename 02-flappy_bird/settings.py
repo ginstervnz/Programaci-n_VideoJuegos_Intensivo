@@ -46,6 +46,7 @@ LOGS_SMOOTHNESS = 6.0
 LOGS_BIT_POSIBILITY = 0.3
 LOGS_MOVING_POSIBILITY = 0.5
 
+#Probability and logic for powerup
 PROBABILITY_POWERUP = 0.08
 TIME_INVULNERABLE = 1.0
 TIME_BIRD_FORM = 7.0
@@ -95,6 +96,7 @@ SOUNDS = {
     "select": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "blipSelect.wav"),
     "pause_theme": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pause_menu.mp3"),
     "game_over": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "game_over.mp3"),
+    "ponk_log": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pum_log.mp3"),
 }
 
 MUSIC = {
@@ -114,6 +116,7 @@ FONTS = {
     "title": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "Title.otf", TITLE_TEXT)
 }
 
+#Color Global
 COLOR_BACKGROUND = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 COLOR_YELLOW = (255, 255, 0)

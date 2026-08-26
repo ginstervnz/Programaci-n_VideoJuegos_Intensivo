@@ -72,14 +72,16 @@ class PauseState(BaseState):
             surface,
             f"Score: {self.score}",
             settings.FONTS["flappy"], 
-            20, 10, 
+            20, 
+            10, 
             settings.COLOR_WHITE, 
             shadowed=True
             )
         render_text(
             surface, 
             f"{self.mode.capitalize()}", 
-            settings.FONTS["flappy"], settings.VIRTUAL_WIDTH - 100,
+            settings.FONTS["flappy"], 
+            settings.VIRTUAL_WIDTH - 108,
             10, 
             settings.COLOR_WHITE, 
             shadowed=True

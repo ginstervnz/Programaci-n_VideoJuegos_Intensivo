@@ -1,5 +1,6 @@
 import random
 import settings
+import pygame
 
 
 
@@ -22,8 +23,16 @@ class NormalSpawnStrategy:
 
 class HardSpawnStrategy:
     def __init__(self):
-        self.next_spawn_time = random.uniform(1.2, 2.5)
         self.speed_multiplier = 1.0
+        # Roll the dice for the first log 
+        self.next_chance = random.random()
+        self._set_timer_for_next_log()
+
+    def _set_timer_for_next_log(self) -> None: #Helper funcion for spanw logs
+        if self.next_chance < settings.LOGS_BIT_POSIBILITY:
+            self.next_spawn_time = random.uniform(2.5, 3.5)
+        else:
+            self.next_spawn_time = random.uniform(1.2, 2.5)
         
     def update(self, world, dt: float) -> None:
         if self.speed_multiplier < 2.0:
@@ -33,23 +42,25 @@ class HardSpawnStrategy:
         
         if world.logs_spawn_timer >= self.next_spawn_time:
             world.logs_spawn_timer = 0.0
-            chance = random.random()
-    
+            chance = self.next_chance
+
+            #Log chance spawn
             if chance < settings.LOGS_BIT_POSIBILITY:
                 log_type = "biting"
-                base_gap = random.randint(settings.LOGS_GAP, settings.LOGS_GAP + 25)
+                base_gap = random.randint(settings.LOGS_GAP + 60, settings.LOGS_GAP + 110)
             elif chance < settings.LOGS_MOVING_POSIBILITY:
                 log_type = "shifting"
                 base_gap = random.randint(settings.LOGS_GAP - 10, settings.LOGS_GAP + 15)
             else:
                 log_type = "normal"
                 base_gap = random.randint(60, settings.LOGS_GAP)
-            
-            safe_bottom_y = settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT - settings.LOG_HEIGHT - base_gap - 50 
+
+            #Safe bottom and Height
+            safe_bottom_y = settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT - settings.LOG_HEIGHT - base_gap - 100 
             max_y_diff = int(60 * (self.next_spawn_time / 1.5))
             
             y = max(
-                -settings.LOG_HEIGHT + 30,
+                -settings.LOG_HEIGHT + 20,
                 min(
                     world.last_log_y + random.randint(-max_y_diff, max_y_diff),
                     safe_bottom_y
@@ -57,8 +68,9 @@ class HardSpawnStrategy:
             )
             world.last_log_y = y
 
+            #Create logs with save range
             if log_type == "biting":
-                speed = random.uniform(1.2, 3.5) 
+                speed = random.uniform(1.0, 2.2) 
                 new_log = world.moving_log_factory.create(settings.VIRTUAL_WIDTH, y, properties={"gap": base_gap, "speed": speed})
                 
             elif log_type == "shifting":
@@ -67,12 +79,25 @@ class HardSpawnStrategy:
             else:
                 new_log = world.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, properties={"gap": base_gap})
 
-                if random.random() < settings.PROBABILITY_POWERUP:
-                    pu_x = settings.VIRTUAL_WIDTH + 15
-                    pu_y = y + settings.LOG_HEIGHT + (base_gap / 2) - 32 
-                    nuevo_powerup = world.powerups_abstract_factory.get_factory("GhostPowerUp").create(pu_x, pu_y)
-                    world.powerups.append(nuevo_powerup)
 
             world.logs.append(new_log)
 
-            self.next_spawn_time = random.uniform(1.2, 2.5)
+            #Roll a dice for next spanw
+            self.next_chance = random.random()
+            self._set_timer_for_next_log()
+
+            # Safe area of powerup spawn
+            if random.random() < settings.PROBABILITY_POWERUP:
+    
+                medium_area = (settings.MAIN_SCROLL_SPEED * self.next_spawn_time) / 2
+                pu_x = settings.VIRTUAL_WIDTH + medium_area
+                pu_y = random.randint(20, settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT - 40)
+                check_area = pygame.Rect(pu_x, pu_y, 16, 16)
+                
+                if not world.collides(check_area):
+                    nuevo_powerup = world.powerups_abstract_factory.get_factory("GhostPowerUp").create(pu_x, pu_y)
+                    world.powerups.append(nuevo_powerup)
+            
+         
+
+            

@@ -18,7 +18,7 @@ class HardMovementStrategy:
 
     def update(self, bird, dt: float) -> None:
 
-        max_speed = settings.BIRD_SPEED * 2.2
+        max_speed = settings.BIRD_SPEED * 1.5  #Top speed of the run
         if self.current_speed < max_speed:
             self.current_speed += 10.0 * dt
 

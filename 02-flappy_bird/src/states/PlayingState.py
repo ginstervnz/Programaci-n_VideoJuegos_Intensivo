@@ -24,27 +24,30 @@ from src.strategies.WorldStrategies import HardSpawnStrategy, NormalSpawnStrateg
 
 class PlayingState(BaseState):
     def enter(self, **enter_params: dict) -> None:
+        self.mode = enter_params.get("mode", "hard")
+        self.score = enter_params.get("score", 0)
+        self.grace_timer = enter_params.get("grace_timer", 0.0)
+        self.ghost_timer = enter_params.get("ghost_timer", 0.0)
 
-        self.mode = enter_params.get("mode", "hard") #Change mode to "hard" or "normal" based on the input parameter
-        if self.mode == "hard":
-            bird_strategy = HardMovementStrategy()
-            spawn_strategy = HardSpawnStrategy()
-        else:
-            bird_strategy = NormalMovementStrategy()
-            spawn_strategy = NormalSpawnStrategy()
-
+        # Safe bird and world after PauseState
         self.world = enter_params.get("world")
-        if self.world is None:
-            self.world = World()
-
-        if hasattr(self.world.spawn_strategy, 'speed_multiplier') and self.mode == "hard":
-            spawn_strategy.speed_multiplier = self.world.spawn_strategy.speed_multiplier
-            spawn_strategy.next_spawn_time = self.world.spawn_strategy.next_spawn_time
-        
-        self.world.spawn_strategy = spawn_strategy
-        self.world.reset(True)
         self.bird = enter_params.get("bird")
+
+        # Change logic for mode
         if self.bird is None:
+            if self.mode == "hard":
+                bird_strategy = HardMovementStrategy()
+                spawn_strategy = HardSpawnStrategy()
+            else:
+                bird_strategy = NormalMovementStrategy()
+                spawn_strategy = NormalSpawnStrategy()
+
+            if self.world is None:
+                self.world = World()
+
+            self.world.spawn_strategy = spawn_strategy
+            self.world.reset(True) 
+
             self.bird = Bird(
                 settings.VIRTUAL_WIDTH / 2 - settings.BIRD_WIDTH / 2,
                 settings.VIRTUAL_HEIGHT / 2 - settings.BIRD_HEIGHT / 2,
@@ -52,9 +55,8 @@ class PlayingState(BaseState):
                 settings.BIRD_HEIGHT,
                 strategy=bird_strategy
             )
-        self.score = enter_params.get("score", 0)
-        self.grace_timer = enter_params.get("grace_timer", 0.0)
-        self.ghost_timer = enter_params.get("ghost_timer", 0.0)
+       
+
         self.bird.is_ghost = self.ghost_timer > 0
         self.bird.ghost_timer = self.ghost_timer
         
@@ -82,7 +84,7 @@ class PlayingState(BaseState):
 
 
         is_dead = False
-        sonido_muerte = "explosion"
+        dead_sound = "explosion"
         if self.bird.get_rect().bottom >= settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT or self.bird.y <= - 30:
             is_dead = True
         if not self.bird.is_ghost and self.grace_timer <= 0:
@@ -90,20 +92,20 @@ class PlayingState(BaseState):
                 if log_pair.collides(self.bird.get_rect()):
                     is_dead = True
                     
-                    if type(log_pair).__name__ == "MovingLogPair":
+                    if type(log_pair).__name__ == "MovingLogPair": #Sound for each Logs types
                        
-                        sonido_muerte = "dead_log_bit"
+                        dead_sound = "dead_log_bit"
                     elif type(log_pair).__name__ == "ShiftingLogPair":
                     
-                        sonido_muerte = "hurt"
+                        dead_sound = "hurt"
                     
                     break 
         if is_dead:
-            settings.SOUNDS[sonido_muerte].play() 
+            settings.SOUNDS[dead_sound].play() 
             
             settings.SOUNDS["ghost_form"].stop() 
             
-            self.state_machine.change("game_over", score=self.score, death_sound=sonido_muerte)
+            self.state_machine.change("game_over", score=self.score, death_sound=dead_sound)
             return
         
         if self.world.update_scored(self.bird.get_rect()):
@@ -155,4 +157,5 @@ class PlayingState(BaseState):
                 score=self.score,
                 mode=self.mode,
                 ghost_timer=self.ghost_timer,
+                grace_timer=self.grace_timer
             )
