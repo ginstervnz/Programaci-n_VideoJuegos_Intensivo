@@ -43,7 +43,7 @@ class ServeState(BaseState):
             surface.blit(settings.TEXTURES["ground"], (0, settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT))
         #Render mini menu
         render_text(surface, "Select Difficulty", settings.FONTS["title"], settings.VIRTUAL_WIDTH // 2, settings.VIRTUAL_HEIGHT // 3, settings.COLOR_WHITE, center=True, shadowed=True)
-        #Opciones
+        #Options
         start_y = (settings.VIRTUAL_HEIGHT // 2) + 20
         for i, option in enumerate(self.options):
             color = settings.COLOR_YELLOW if i == self.selected_option else settings.COLOR_WHITE

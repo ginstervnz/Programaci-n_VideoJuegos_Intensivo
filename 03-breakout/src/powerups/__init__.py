@@ -15,5 +15,6 @@ from src.powerups.RadiactivePowerUp import RadiactivePowerUp
 from src.powerups.RocketPowerUp import RocketPowerUp
 from src.powerups.LifePowerUp import LifePowerUp
 from src.powerups.ElectroPowerUp import ElectroPowerUp
+from src.powerups.QuantumPowerUp import QuantumPowerUp
 
-(PowerUp, TwoMoreBall, StickPowerUp, RadiactivePowerUp, RocketPowerUp, LifePowerUp, ElectroPowerUp)
+(PowerUp, TwoMoreBall, StickPowerUp, RadiactivePowerUp, RocketPowerUp, LifePowerUp, ElectroPowerUp, QuantumPowerUp)

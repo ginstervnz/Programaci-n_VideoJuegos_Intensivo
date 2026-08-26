@@ -91,3 +91,97 @@ def trigger_electro_storm(state, ball, brick):
                 "end": (target.x + 16, target.y + 8),
                 "life": 0.2 
             })
+
+def compute_convex_hull(points):
+    points = sorted(set(points))
+    if len(points) <= 2: return points
+    
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+        
+    lower = []
+    for p in points:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0: lower.pop()
+        lower.append(p)
+        
+    upper = []
+    for p in reversed(points):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0: upper.pop()
+        upper.append(p)
+        
+    return lower[:-1] + upper[:-1]
+
+
+def update_quantum_nodes(state, dt):
+    if getattr(state, 'quantum_timer', 0) > 0:
+        state.quantum_timer -= dt
+        
+        for node in getattr(state, 'quantum_nodes', []):
+            node["x"] += node["vx"] * dt
+            node["y"] += node["vy"] * dt
+            
+            if node["x"] < 0 or node["x"] > settings.VIRTUAL_WIDTH:
+                node["vx"] *= -1
+                node["x"] = max(0, min(node["x"], settings.VIRTUAL_WIDTH))
+                
+            floor_y = settings.VIRTUAL_HEIGHT
+            ceil_y = settings.VIRTUAL_HEIGHT - 80 #Limite Y for shield
+            if node["y"] < ceil_y or node["y"] > floor_y:
+                node["vy"] *= -1
+                node["y"] = max(ceil_y, min(node["y"], floor_y))
+
+        nodes = getattr(state, 'quantum_nodes', [])
+        points = [(n["x"], n["y"]) for n in nodes]
+        points.append((state.paddle.x, state.paddle.y + state.paddle.height))
+        points.append((state.paddle.x + state.paddle.width, state.paddle.y + state.paddle.height))
+        
+        state.quantum_hull = compute_convex_hull(points)
+
+def check_quantum_bounce(state, ball):
+    if getattr(state, 'quantum_timer', 0) > 0 and hasattr(state, 'quantum_hull'):
+        hull = state.quantum_hull
+        if len(hull) < 3: return
+        
+        bx = ball.x + ball.width / 2
+        by = ball.y + ball.height
+        bounce_y = None
+        normal = None
+        
+    
+        for i in range(len(hull)):
+            p1, p2 = hull[i], hull[(i + 1) % len(hull)]
+            min_x, max_x = min(p1[0], p2[0]), max(p1[0], p2[0])
+            
+            if min_x <= bx <= max_x and max_x - min_x > 0.1:
+                t = (bx - p1[0]) / (p2[0] - p1[0])
+                line_y = p1[1] + t * (p2[1] - p1[1])
+                
+              
+                if bounce_y is None or line_y < bounce_y:
+                    bounce_y = line_y
+                    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+                    nx, ny = -dy, dx 
+                    length = math.hypot(nx, ny)
+                    if length != 0:
+                        nx, ny = nx / length, ny / length
+                        if ny > 0: nx, ny = -nx, -ny 
+                        normal = (nx, ny)
+
+        if bounce_y is not None and by >= bounce_y and ball.vy > 0:
+            ball.y = bounce_y - ball.height - 1
+            
+            if normal:
+                nx, ny = normal
+                dot_product = ball.vx * nx + ball.vy * ny
+                ball.vx = ball.vx - 2 * dot_product * nx
+                ball.vy = ball.vy - 2 * dot_product * ny
+                ball.vx *= 1.05 
+                ball.vy *= 1.05
+            ball.vy = -abs(ball.vy)
+            if ball.vy > -120:
+                ball.vy = -120
+
+            settings.SOUNDS["hit_shield"].stop()
+            settings.SOUNDS["hit_shield"].play()
+            state.screen_shake_timer = 0.15
+            state.flash_timer = 0.05

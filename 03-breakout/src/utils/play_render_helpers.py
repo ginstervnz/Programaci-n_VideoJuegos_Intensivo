@@ -79,3 +79,19 @@ def render_hud(surface, lives, score):
         heart_x += 11
         i += 1
     render_text(surface, f"Score: {score}", settings.FONTS["tiny"], settings.VIRTUAL_WIDTH - 80, 5, (255, 255, 255))
+
+
+def render_quantum_shield(surface, state):
+    if getattr(state, 'quantum_timer', 0) > 0 and hasattr(state, 'quantum_hull'):
+        hull = state.quantum_hull
+        if len(hull) < 3: return
+        
+        shield_surf = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA)
+        import math
+        alpha = int(100 + math.sin(pygame.time.get_ticks() / 100.0) * 50) 
+        pygame.draw.polygon(shield_surf, (0, 255, 150, alpha), hull)
+        surface.blit(shield_surf, (0, 0))
+        
+        pygame.draw.polygon(surface, (0, 255, 200), hull, 2)
+        for n in getattr(state, 'quantum_nodes', []):
+            pygame.draw.circle(surface, (255, 255, 255), (int(n["x"]), int(n["y"])), 3)
