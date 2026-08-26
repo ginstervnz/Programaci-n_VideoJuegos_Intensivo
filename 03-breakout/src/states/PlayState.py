@@ -24,11 +24,11 @@ import src.powerups
 #Helpers
 from src.utils.play_update_helpers import (
     update_visual_timers, process_sticky_and_arrow, 
-    process_rocket_system, trigger_electro_storm, release_stuck_balls
+    process_rocket_system, trigger_electro_storm, release_stuck_balls,update_quantum_nodes, check_quantum_bounce
 )
 from src.utils.play_render_helpers import (
     render_lightning_rays, render_electro_aura, is_paddle_visible, 
-    render_stuck_arrow, apply_screen_shake, render_flash, render_hud
+    render_stuck_arrow, apply_screen_shake, render_flash, render_hud,render_quantum_shield
 )
 
 
@@ -67,6 +67,8 @@ class PlayState(BaseState):
         self.screen_shake_timer = params.get("screen_shake_timer", 0)
         self.lightning_rays = params.get("lightning_rays", [])
         self.flash_timer = params.get("flash_timer", 0)
+        self.quantum_timer = params.get("quantum_timer", 0)
+        self.quantum_nodes = params.get("quantum_nodes", [])
 
 
 
@@ -76,6 +78,7 @@ class PlayState(BaseState):
         update_visual_timers(self, dt)
         process_sticky_and_arrow(self, dt)
         process_rocket_system(self, dt)
+        update_quantum_nodes(self, dt)
 
         # Simple Radiactive logic
         if self.radiactive_timer > 0:
@@ -87,6 +90,7 @@ class PlayState(BaseState):
         for ball in self.balls:
             ball.update(dt)
             ball.solve_world_boundaries()
+            check_quantum_bounce(self, ball)
 
             if ball.collides(self.paddle):
                 settings.SOUNDS["paddle_hit"].stop()
@@ -142,7 +146,8 @@ class PlayState(BaseState):
                     "RadiactivePowerUp", 
                     "RocketPowerUp", 
                     "LifePowerUp", 
-                    "ElectroPowerUp"
+                    "ElectroPowerUp",
+                    "QuantumPowerUp"
                     ]
                 powerup_type = random.choice(available_powerups)
                 self.powerups.append( 
@@ -202,6 +207,7 @@ class PlayState(BaseState):
         for powerup in getattr(self, 'powerups', []):
             powerup.render(world_surf)
 
+        render_quantum_shield(world_surf, self)
         apply_screen_shake(surface, world_surf, getattr(self, 'screen_shake_timer', 0))
         render_flash(surface, getattr(self, 'flash_timer', 0))
         render_hud(surface, self.lives, self.score)
@@ -242,6 +248,8 @@ class PlayState(BaseState):
                     screen_shake_timer=getattr(self, 'screen_shake_timer', 0),
                     lightning_rays=getattr(self, 'lightning_rays', []),
                     flash_timer=getattr(self, 'flash_timer', 0),
+                    quantum_timer=getattr(self, 'quantum_timer', 0),
+                    quantum_nodes=getattr(self, 'quantum_nodes', []),
                 )
                 
         elif input_id == "shot" and input_data.pressed:

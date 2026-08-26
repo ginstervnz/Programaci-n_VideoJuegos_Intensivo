@@ -55,10 +55,11 @@ PADDLE_GROW_UP_POINTS = 200
 #Settings of powerups
 POWERUP_SPEED = 50
 TIME_POWERUP_STICKY = 5.0
-POSSIBILITY_POWERUP_SPAWN = 1.0
+POSSIBILITY_POWERUP_SPAWN = 0.20
 RADIACTIVE_DAMAGE = 3
 ROCKET_TIME = 10.0
 TIME_POWEROP_ELECTRO = 10.0
+DURATION_SHIELD = 10.0
 
 BASE_DIR = Path(__file__).parent
 
@@ -88,6 +89,8 @@ SOUNDS = {
     "explosion": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sound_big_explosion.mp3"),
     "take_electro": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "take_electro.mp3"),
     "eletro_efect": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "electro_efect.mp3"),
+    "hit_shield": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hit_shield.mp3"),
+    "take_shield": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "take_shield.mp3"),
 }
 
 TEXTURES = {
@@ -110,6 +113,7 @@ TEXTURES = {
     "paddle_sticky": pygame.image.load(BASE_DIR / "assets" / "graphics" / "breakout_sticky.png"),
     "rocket_special": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket3.png"),
     "electro": pygame.image.load(BASE_DIR / "assets" / "graphics" / "electry.png"),
+    "shield": pygame.image.load(BASE_DIR / "assets" / "graphics" / "shield.png"),
 }
 
 FRAMES = {

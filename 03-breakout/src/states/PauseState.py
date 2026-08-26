@@ -30,6 +30,8 @@ class PauseState(BaseState):
         self.selected_option = 0
         self.lightning_rays = params.get("lightning_rays", [])
         self.flash_timer = params.get("flash_timer", 0)
+        self.quantum_timer = params.get("quantum_timer", 0)
+        self.quantum_nodes = params.get("quantum_nodes", [])
 
     def render(self, surface: pygame.Surface) -> None:
         heart_x = settings.VIRTUAL_WIDTH - 120
@@ -132,4 +134,6 @@ class PauseState(BaseState):
             screen_shake_timer=self.screen_shake_timer,
             lightning_rays=getattr(self, "lightning_rays", []),
             flash_timer=getattr(self, "flash_timer", 0),
+            quantum_timer=self.quantum_timer,
+            quantum_nodes=self.quantum_nodes
         )
