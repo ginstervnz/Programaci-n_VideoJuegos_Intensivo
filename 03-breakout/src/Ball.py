@@ -31,6 +31,12 @@ class Ball:
         self.frame = random.randint(0, 6)
         self.active = True
 
+        #It's sticky flags
+        self.stuck = False
+        self.stuck_offset = 0
+        #It's radiactive flags
+        self.is_radiactive = False
+
     def get_collision_rect(self) -> pygame.Rect:
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
@@ -64,9 +70,12 @@ class Ball:
         self.y += self.vy * dt
 
     def render(self, surface):
-        surface.blit(
-            self.texture, (self.x, self.y), settings.FRAMES["balls"][self.frame]
-        )
+        if getattr(self, 'is_radiactive', False):
+            surface.blit(settings.TEXTURES["radiactive_ball"], (self.x, self.y))
+        else:
+            surface.blit( 
+                self.texture, (self.x, self.y), settings.FRAMES["balls"][self.frame] 
+            )
 
     @staticmethod
     def get_intersection(r1: pygame.Rect, r2: pygame.Rect) -> Optional[Tuple[int, int]]:

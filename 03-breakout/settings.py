@@ -31,6 +31,7 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "move_ri
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "move_down")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "move_left")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "pause")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_f, "shot")
 
 TITLE = "Breakout"
 
@@ -51,7 +52,13 @@ LIVE_POINTS_BASE = 2000
 
 PADDLE_GROW_UP_POINTS = 200
 
+#Settings of powerups
 POWERUP_SPEED = 50
+TIME_POWERUP_STICKY = 5.0
+POSSIBILITY_POWERUP_SPAWN = 1.0
+RADIACTIVE_DAMAGE = 3
+ROCKET_TIME = 10.0
+TIME_POWEROP_ELECTRO = 10.0
 
 BASE_DIR = Path(__file__).parent
 
@@ -73,6 +80,14 @@ SOUNDS = {
     "life": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "life.wav"),
     "grow_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "grow_up.wav"),
     "pause": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pause.wav"),
+    "sticky": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sticky.mp3"),
+    "radiactive": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "radiactive_sound.wav"),
+    "one_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "one_up.mp3"),
+    "shot_sound": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "shot_sound.mp3"),
+    "rocket": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "take_gun.mp3"),
+    "explosion": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "sound_big_explosion.mp3"),
+    "take_electro": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "take_electro.mp3"),
+    "eletro_efect": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "electro_efect.mp3"),
 }
 
 TEXTURES = {
@@ -82,6 +97,19 @@ TEXTURES = {
     "spritesheet": pygame.image.load(BASE_DIR / "assets" / "graphics" / "breakout.png"),
     "hearts": pygame.image.load(BASE_DIR / "assets" / "graphics" / "hearts.png"),
     "arrows": pygame.image.load(BASE_DIR / "assets" / "graphics" / "arrows.png"),
+    "sticky_up": pygame.image.load(BASE_DIR / "assets" / "graphics" / "sticky.png"),
+    "arrow_shot": pygame.image.load(BASE_DIR / "assets" / "graphics" / "arrows_shot.png"),
+    "radiactive_ball": pygame.image.load(BASE_DIR / "assets" / "graphics" / "radiactive_ball.png"),
+    "radiactive": pygame.image.load(BASE_DIR / "assets" / "graphics" / "radiactive.png"),
+    "paddle_rocket": pygame.image.load(BASE_DIR / "assets" / "graphics" / "breakout_rocket.png"),
+    "rocket_projectile": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket2.png"),
+    "rocket_powerup": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket.png"),
+    "rocket_left": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket_left.png"),
+    "rocket_right": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket_right.png"),
+    "life_powerup": pygame.image.load(BASE_DIR / "assets" / "graphics" / "one_up.png"),
+    "paddle_sticky": pygame.image.load(BASE_DIR / "assets" / "graphics" / "breakout_sticky.png"),
+    "rocket_special": pygame.image.load(BASE_DIR / "assets" / "graphics" / "rocket3.png"),
+    "electro": pygame.image.load(BASE_DIR / "assets" / "graphics" / "electry.png"),
 }
 
 FRAMES = {
@@ -99,3 +127,7 @@ FONTS = {
     "medium": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 12),
     "large": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 24),
 }
+
+#Colors 
+COLOR_WHITE = (255, 255, 255)
+BLUE_COLOR = (103, 255, 255)

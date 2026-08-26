@@ -26,6 +26,9 @@ class FlappyBird(Game):
                 "title": states.TitleScreenState,
                 "count_down": states.CountDownState,
                 "playing": states.PlayingState,
+                "pause": states.PauseState,
+                "serve": states.ServeState,
+                "game_over": states.GameOverState,
             }
         )
         self.state_machine.change("title")

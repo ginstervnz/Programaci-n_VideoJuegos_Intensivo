@@ -28,7 +28,7 @@ class ServeState(BaseState):
         pong = self.pong
         render_table(surface,pong)
 
-        is_both_ai = pong.player1.is_ai and pong.player2.is_ai
+        is_both_ai = pong.player1.is_ai and pong.player2.is_ai #Logic for Color IAs and Human
         is_none_ai = not pong.player1.is_ai and not pong.player2.is_ai
         color_z = pong.player1.ai_color if (pong.player1.is_ai and not pong.player2.is_ai) else settings.COLOR_WHITE
         color_x = pong.player2.ai_color if (pong.player2.is_ai and not pong.player1.is_ai) else settings.COLOR_WHITE

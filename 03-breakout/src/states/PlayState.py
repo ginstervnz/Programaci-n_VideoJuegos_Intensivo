@@ -9,16 +9,27 @@ This file contains the class to define the Play state.
 """
 
 import random
-
 import pygame
-
+import math
 from gale.factory import AbstractFactory
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
 
+from src.powerups.Rocket import Rocket
+
 import settings
 import src.powerups
+
+#Helpers
+from src.utils.play_update_helpers import (
+    update_visual_timers, process_sticky_and_arrow, 
+    process_rocket_system, trigger_electro_storm, release_stuck_balls
+)
+from src.utils.play_render_helpers import (
+    render_lightning_rays, render_electro_aura, is_paddle_visible, 
+    render_stuck_arrow, apply_screen_shake, render_flash, render_hud
+)
 
 
 class PlayState(BaseState):
@@ -27,6 +38,7 @@ class PlayState(BaseState):
         self.score = params["score"]
         self.lives = params["lives"]
         self.paddle = params["paddle"]
+        self.paddle.vx = 0
         self.balls = params["balls"]
         self.brickset = params["brickset"]
         self.live_factor = params["live_factor"]
@@ -36,49 +48,85 @@ class PlayState(BaseState):
             + settings.PADDLE_GROW_UP_POINTS * (self.paddle.size + 1) * self.level
         )
         self.powerups = params.get("powerups", [])
-
+        self.sticky_timer = params.get("sticky_timer", 0)
+        self.radiactive_timer = params.get("radiactive_timer", 0)
+        self.rocket_timer = params.get("rocket_timer", 0)
+        self.rockets = params.get("rockets", [])
+        self.arrow_angle = params.get("arrow_angle", 0)
+        self.arrow_dir = params.get("arrow_dir", 1)  
+        self.ARROW_ROTATE_SPEED = 120 
+        self.ARROW_MAX_ANGLE = 60
+     
         if not params.get("resume", False):
             self.balls[0].vx = random.randint(-80, 80)
             self.balls[0].vy = random.randint(-170, -100)
             settings.SOUNDS["paddle_hit"].play()
-
+    
         self.powerups_abstract_factory = AbstractFactory("src.powerups")
+        self.rocket_shots_left = params.get("rocket_shots_left", 0)
+        self.screen_shake_timer = params.get("screen_shake_timer", 0)
+        self.lightning_rays = params.get("lightning_rays", [])
+        self.flash_timer = params.get("flash_timer", 0)
+
+
 
     def update(self, dt: float) -> None:
         self.paddle.update(dt)
+
+        update_visual_timers(self, dt)
+        process_sticky_and_arrow(self, dt)
+        process_rocket_system(self, dt)
+
+        # Simple Radiactive logic
+        if self.radiactive_timer > 0:
+            self.radiactive_timer -= dt
+            if self.radiactive_timer <= 0:
+                for ball in self.balls:
+                    ball.is_radiactive = False
 
         for ball in self.balls:
             ball.update(dt)
             ball.solve_world_boundaries()
 
-            # Check collision with the paddle
             if ball.collides(self.paddle):
                 settings.SOUNDS["paddle_hit"].stop()
                 settings.SOUNDS["paddle_hit"].play()
-                ball.rebound(self.paddle)
-                ball.push(self.paddle)
+                ball_already_stuck = any(getattr(b, 'stuck', False) for b in self.balls)
+                
+                if getattr(self.paddle, 'is_sticky', False) and not ball_already_stuck:
+                    ball.stuck = True
+                    ball.stuck_offset = ball.x - self.paddle.x
+                    ball.vx = 0
+                    ball.vy = 0
+                else:
+                    ball.rebound(self.paddle) 
+                    ball.push(self.paddle)
 
-            # Check collision with brickset
             if not ball.collides(self.brickset):
                 continue
 
             brick = self.brickset.get_colliding_brick(ball.get_collision_rect())
-
             if brick is None:
                 continue
 
-            brick.hit()
-            self.score += brick.score()
+            # thunderstorm!
+            trigger_electro_storm(self, ball, brick)
+
+            damage = settings.RADIACTIVE_DAMAGE if getattr(ball, 'is_radiactive', False) else 1
+            for _ in range(damage):
+                if not brick.broken:
+                    brick.hit()
+                    self.score += brick.score()
+           
             ball.rebound(brick)
 
-            # Check earn life
+            # Lives and drops
             if self.score >= self.points_to_next_live:
                 settings.SOUNDS["life"].play()
                 self.lives = min(3, self.lives + 1)
                 self.live_factor += 0.5
                 self.points_to_next_live += settings.LIVE_POINTS_BASE * self.live_factor
 
-            # Check growing up of the paddle
             if self.score >= self.points_to_next_grow_up:
                 settings.SOUNDS["grow_up"].play()
                 self.points_to_next_grow_up += (
@@ -86,18 +134,23 @@ class PlayState(BaseState):
                 )
                 self.paddle.inc_size()
 
-            # Chance to generate two more balls
-            if random.random() < 0.1:
-                r = brick.get_collision_rect()
-                self.powerups.append(
-                    self.powerups_abstract_factory.get_factory("TwoMoreBall").create(
-                        r.centerx - 8, r.centery - 8
-                    )
+            if random.random() < settings.POSSIBILITY_POWERUP_SPAWN:
+                r = brick.get_collision_rect() 
+                available_powerups = [
+                    "TwoMoreBall", 
+                    "StickPowerUp", 
+                    "RadiactivePowerUp", 
+                    "RocketPowerUp", 
+                    "LifePowerUp", 
+                    "ElectroPowerUp"
+                    ]
+                powerup_type = random.choice(available_powerups)
+                self.powerups.append( 
+                    self.powerups_abstract_factory.get_factory(powerup_type).create(r.centerx - 8, r.centery - 8) 
                 )
 
-        # Removing all balls that are not in play
-        self.balls = [ball for ball in self.balls if ball.active]
 
+        self.balls = [ball for ball in self.balls if ball.active]
         self.brickset.update(dt)
 
         if not self.balls:
@@ -107,79 +160,52 @@ class PlayState(BaseState):
             else:
                 self.paddle.dec_size()
                 self.state_machine.change(
-                    "serve",
-                    level=self.level,
-                    score=self.score,
-                    lives=self.lives,
-                    paddle=self.paddle,
-                    brickset=self.brickset,
-                    points_to_next_live=self.points_to_next_live,
-                    live_factor=self.live_factor,
+                    "serve", level=self.level, score=self.score, lives=self.lives,
+                    paddle=self.paddle, brickset=self.brickset,
+                    points_to_next_live=self.points_to_next_live, live_factor=self.live_factor,
                 )
 
-        # Update powerups
         for powerup in self.powerups:
             powerup.update(dt)
-
             if powerup.collides(self.paddle):
                 powerup.take(self)
-
-        # Remove powerups that are not in play
+                
         self.powerups = [p for p in self.powerups if p.active]
 
-        # Check victory
-        if self.brickset.size == 1 and next(
-            (True for _, b in self.brickset.bricks.items() if b.broken), False
-        ):
+        #Victory
+        if all(b.broken for b in self.brickset.bricks.values()):
             self.state_machine.change(
-                "victory",
-                lives=self.lives,
-                level=self.level,
-                score=self.score,
-                paddle=self.paddle,
-                balls=self.balls,
-                points_to_next_live=self.points_to_next_live,
+                "victory", lives=self.lives, level=self.level, score=self.score,
+                paddle=self.paddle, balls=self.balls, points_to_next_live=self.points_to_next_live,
                 live_factor=self.live_factor,
             )
 
     def render(self, surface: pygame.Surface) -> None:
-        heart_x = settings.VIRTUAL_WIDTH - 120
+        world_surf = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT))
+        world_surf.blit(settings.TEXTURES["background"], (0, 0))
 
-        i = 0
-        # Draw filled hearts
-        while i < self.lives:
-            surface.blit(
-                settings.TEXTURES["hearts"], (heart_x, 5), settings.FRAMES["hearts"][0]
-            )
-            heart_x += 11
-            i += 1
+        self.brickset.render(world_surf)
 
-        # Draw empty hearts
-        while i < 3:
-            surface.blit(
-                settings.TEXTURES["hearts"], (heart_x, 5), settings.FRAMES["hearts"][1]
-            )
-            heart_x += 11
-            i += 1
+        for rocket in getattr(self, 'rockets', []):
+            rocket.render(world_surf)
 
-        render_text(
-            surface,
-            f"Score: {self.score}",
-            settings.FONTS["tiny"],
-            settings.VIRTUAL_WIDTH - 80,
-            5,
-            (255, 255, 255),
-        )
+        render_lightning_rays(world_surf, getattr(self, 'lightning_rays', []))
 
-        self.brickset.render(surface)
-
-        self.paddle.render(surface)
-
+        if is_paddle_visible(self.paddle, getattr(self, 'rocket_timer', 0), getattr(self, 'sticky_timer', 0)):
+            self.paddle.render(world_surf)
+        
         for ball in self.balls:
-            ball.render(surface)
+            render_stuck_arrow(world_surf, ball, getattr(self, 'arrow_angle', 0))
+            ball.render(world_surf)
+            render_electro_aura(world_surf, ball)
 
-        for powerup in self.powerups:
-            powerup.render(surface)
+        for powerup in getattr(self, 'powerups', []):
+            powerup.render(world_surf)
+
+        apply_screen_shake(surface, world_surf, getattr(self, 'screen_shake_timer', 0))
+        render_flash(surface, getattr(self, 'flash_timer', 0))
+        render_hud(surface, self.lives, self.score)
+      
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "move_left":
@@ -192,16 +218,44 @@ class PlayState(BaseState):
                 self.paddle.vx = settings.PADDLE_SPEED
             elif input_data.released and self.paddle.vx > 0:
                 self.paddle.vx = 0
+                
         elif input_id == "pause" and input_data.pressed:
-            self.state_machine.change(
-                "pause",
-                level=self.level,
-                score=self.score,
-                lives=self.lives,
-                paddle=self.paddle,
-                balls=self.balls,
-                brickset=self.brickset,
-                points_to_next_live=self.points_to_next_live,
-                live_factor=self.live_factor,
-                powerups=self.powerups,
-            )
+            if not release_stuck_balls(self):        
+                self.state_machine.change(
+                    "pause", 
+                    level=self.level, 
+                    score=self.score, 
+                    lives=self.lives,
+                    paddle=self.paddle, 
+                    balls=self.balls, 
+                    brickset=self.brickset,
+                    points_to_next_live=self.points_to_next_live, 
+                    live_factor=self.live_factor,
+                    powerups=self.powerups, 
+                    sticky_timer=self.sticky_timer,
+                    radiactive_timer=self.radiactive_timer, 
+                    rocket_timer=self.rocket_timer,
+                    rockets=self.rockets, 
+                    arrow_angle=self.arrow_angle, 
+                    arrow_dir=self.arrow_dir,
+                    rocket_shots_left=getattr(self, 'rocket_shots_left', 0),
+                    screen_shake_timer=getattr(self, 'screen_shake_timer', 0),
+                    lightning_rays=getattr(self, 'lightning_rays', []),
+                    flash_timer=getattr(self, 'flash_timer', 0),
+                )
+                
+        elif input_id == "shot" and input_data.pressed:
+            if getattr(self.paddle, 'has_rockets', False) and len(self.rockets) == 0:
+                settings.SOUNDS["shot_sound"].play()
+                is_special = (self.rocket_shots_left == 1)
+                
+                left_x = self.paddle.x + 2
+                right_x = self.paddle.x + self.paddle.width - 18 
+                spawn_y = self.paddle.y - 8 
+                
+                self.rockets.append(Rocket(left_x, spawn_y, is_special))
+                self.rockets.append(Rocket(right_x, spawn_y, is_special))
+                
+                self.rocket_shots_left -= 1
+                if self.rocket_shots_left <= 0:
+                    self.paddle.has_rockets = False

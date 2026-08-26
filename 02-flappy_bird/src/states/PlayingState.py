@@ -19,30 +19,95 @@ from gale.text import render_text
 import settings
 from src.Bird import Bird
 from src.World import World
-
+from src.strategies.BirdStrategies import HardMovementStrategy, NormalMovementStrategy
+from src.strategies.WorldStrategies import HardSpawnStrategy, NormalSpawnStrategy
 
 class PlayingState(BaseState):
-    def enter(self, world: Optional[World] = None) -> None:
-        self.world = world if world is not None else World()
-        self.world.reset(True)
-        self.bird = Bird(
-            settings.VIRTUAL_WIDTH / 2 - settings.BIRD_WIDTH / 2,
-            settings.VIRTUAL_HEIGHT / 2 - settings.BIRD_HEIGHT / 2,
-            settings.BIRD_WIDTH,
-            settings.BIRD_HEIGHT,
-        )
-        self.score = 0
+    def enter(self, **enter_params: dict) -> None:
+        self.mode = enter_params.get("mode", "hard")
+        self.score = enter_params.get("score", 0)
+        self.grace_timer = enter_params.get("grace_timer", 0.0)
+        self.ghost_timer = enter_params.get("ghost_timer", 0.0)
 
+        # Safe bird and world after PauseState
+        self.world = enter_params.get("world")
+        self.bird = enter_params.get("bird")
+
+        # Change logic for mode
+        if self.bird is None:
+            if self.mode == "hard":
+                bird_strategy = HardMovementStrategy()
+                spawn_strategy = HardSpawnStrategy()
+            else:
+                bird_strategy = NormalMovementStrategy()
+                spawn_strategy = NormalSpawnStrategy()
+
+            if self.world is None:
+                self.world = World()
+
+            self.world.spawn_strategy = spawn_strategy
+            self.world.reset(True) 
+
+            self.bird = Bird(
+                settings.VIRTUAL_WIDTH / 2 - settings.BIRD_WIDTH / 2,
+                settings.VIRTUAL_HEIGHT / 2 - settings.BIRD_HEIGHT / 2,
+                settings.BIRD_WIDTH,
+                settings.BIRD_HEIGHT,
+                strategy=bird_strategy
+            )
+       
+
+        self.bird.is_ghost = self.ghost_timer > 0
+        self.bird.ghost_timer = self.ghost_timer
+        
     def update(self, dt: float) -> None:
         self.bird.update(dt)
         self.world.update(dt)
 
-        if self.world.collides(self.bird.get_rect()):
-            settings.SOUNDS["explosion"].play()
-            settings.SOUNDS["hurt"].play()
-            self.state_machine.change("count_down")
-            return
+        if self.bird.is_ghost:
+            self.ghost_timer -= dt
+            self.bird.ghost_timer = self.ghost_timer 
+            
+            if self.ghost_timer <= 0:
+                self.bird.is_ghost = False
+                self.grace_timer = settings.TIME_INVULNERABLE
+                settings.SOUNDS["ghost_form"].stop()
+                pygame.mixer.music.unpause()
+        if self.grace_timer > 0:
+            self.grace_timer -= dt        
 
+        for pu in self.world.powerups:
+            if pu.collides(self.bird.get_rect()):
+                pu.take(self)
+
+        self.world.powerups = [p for p in self.world.powerups if p.active]
+
+
+        is_dead = False
+        dead_sound = "explosion"
+        if self.bird.get_rect().bottom >= settings.VIRTUAL_HEIGHT - settings.GROUND_HEIGHT or self.bird.y <= - 30:
+            is_dead = True
+        if not self.bird.is_ghost and self.grace_timer <= 0:
+            for log_pair in self.world.logs:
+                if log_pair.collides(self.bird.get_rect()):
+                    is_dead = True
+                    
+                    if type(log_pair).__name__ == "MovingLogPair": #Sound for each Logs types
+                       
+                        dead_sound = "dead_log_bit"
+                    elif type(log_pair).__name__ == "ShiftingLogPair":
+                    
+                        dead_sound = "hurt"
+                    
+                    break 
+        if is_dead:
+            settings.SOUNDS[dead_sound].play() 
+            
+            settings.SOUNDS["ghost_form"].stop() 
+            
+            self.state_machine.change("game_over", score=self.score, death_sound=dead_sound)
+            return
+        
         if self.world.update_scored(self.bird.get_rect()):
             self.score += 1
             settings.SOUNDS["score"].play()
@@ -59,7 +124,38 @@ class PlayingState(BaseState):
             settings.COLOR_WHITE,
             shadowed=True,
         )
+        render_text(
+            surface,
+            f" {self.mode.capitalize()}",
+            settings.FONTS["flappy"],
+            settings.VIRTUAL_WIDTH - 120, 
+            10,
+            settings.COLOR_WHITE,
+            shadowed=True,
+        )
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "jump" and input_data.pressed:
             self.bird.jump()
+        elif input_id == "left":
+            if input_data.pressed:
+                self.bird.moving_left = True
+            elif input_data.released:
+                self.bird.moving_left = False
+                
+        elif input_id == "right":
+            if input_data.pressed:
+                self.bird.moving_right = True
+            elif input_data.released:
+                self.bird.moving_right = False
+        if input_id == "confirm" and input_data.pressed:
+            settings.SOUNDS["select"].play()
+            self.state_machine.change(
+                "pause",
+                bird=self.bird,
+                world=self.world,     
+                score=self.score,
+                mode=self.mode,
+                ghost_timer=self.ghost_timer,
+                grace_timer=self.grace_timer
+            )

@@ -10,5 +10,10 @@ This module contains all of the power ups.
 
 from src.powerups.PowerUp import PowerUp
 from src.powerups.TwoMoreBall import TwoMoreBall
+from src.powerups.StickPowerUp import StickPowerUp
+from src.powerups.RadiactivePowerUp import RadiactivePowerUp
+from src.powerups.RocketPowerUp import RocketPowerUp
+from src.powerups.LifePowerUp import LifePowerUp
+from src.powerups.ElectroPowerUp import ElectroPowerUp
 
-(PowerUp, TwoMoreBall)
+(PowerUp, TwoMoreBall, StickPowerUp, RadiactivePowerUp, RocketPowerUp, LifePowerUp, ElectroPowerUp)

@@ -33,12 +33,12 @@ class PlayState(BaseState):
         if pong.player2.is_ai: # Check if player 2 is controlled by AI
             if pong.ball.vx > 0 and pong.ball.x > (settings.VIRTUAL_WIDTH * settings.AI_VISION_P2):
                 center_paddle: float = pong.player2.y + (pong.player2.height / 2)
-                centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+                center_of_ball: float = pong.ball.y + (pong.ball.height / 2)
                 dead_zone: float = pong.player2.height / 3
                 
-                if center_paddle < (centro_pelota - dead_zone):
+                if center_paddle < (center_of_ball - dead_zone):
                     pong.player2.vy = settings.PADDLE_SPEED
-                elif center_paddle > (centro_pelota + dead_zone):
+                elif center_paddle > (center_of_ball + dead_zone):
                     pong.player2.vy = -settings.PADDLE_SPEED
                 else:
                     pong.player2.vy = 0.0
@@ -48,12 +48,12 @@ class PlayState(BaseState):
         if pong.player1.is_ai: # Check if player 1 is controlled by AI
             if pong.ball.vx < 0 and pong.ball.x < (settings.VIRTUAL_WIDTH * settings.AI_VISION_P1):
                 center_paddle: float = pong.player1.y + (pong.player1.height / 2)
-                centro_pelota: float = pong.ball.y + (pong.ball.height / 2)
+                center_of_ball: float = pong.ball.y + (pong.ball.height / 2)
                 dead_zone: float = pong.player1.height / 3
                         
-                if center_paddle < (centro_pelota - dead_zone):
+                if center_paddle < (center_of_ball - dead_zone):
                     pong.player1.vy = settings.PADDLE_SPEED
-                elif center_paddle > (centro_pelota + dead_zone):
+                elif center_paddle > (center_of_ball + dead_zone):
                     pong.player1.vy = -settings.PADDLE_SPEED
                 else:
                     pong.player1.vy = 0.0
