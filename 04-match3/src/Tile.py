@@ -24,12 +24,27 @@ class Tile:
         self.alpha_surface = pygame.Surface(
             (settings.TILE_SIZE, settings.TILE_SIZE), pygame.SRCALPHA
         )
+        # Power-up flags
+        self.is_powerup = False
+        self.is_color_bomb = False
 
     def render(self, surface: pygame.Surface, offset_x: int, offset_y: int) -> None:
+        texture = settings.TEXTURES["tiles"]
+        variety = self.variety
+
+        # Determine texture and variety based on power-up status
+        if getattr(self, 'is_powerup', False):
+            texture = settings.TEXTURES["power_tiles"]
+            variety = 5 if self.color % 2 == 0 else 0
+        elif getattr(self, 'is_color_bomb', False):
+            texture = settings.TEXTURES["bomb_tiles"]
+            variety = 5 if self.color % 2 == 0 else 0
+
+        self.alpha_surface.fill((0, 0, 0, 0))
         self.alpha_surface.blit(
-            settings.TEXTURES["tiles"],
+            texture,
             (0, 0),
-            settings.FRAMES["tiles"][self.color][self.variety],
+            settings.FRAMES["tiles"][self.color][variety],
         )
         pygame.draw.rect(
             self.alpha_surface,
@@ -38,8 +53,10 @@ class Tile:
             border_radius=7,
         )
         surface.blit(self.alpha_surface, (self.x + 2 + offset_x, self.y + 2 + offset_y))
+
+        # Draw the actual tile
         surface.blit(
-            settings.TEXTURES["tiles"],
+            texture,
             (self.x + offset_x, self.y + offset_y),
-            settings.FRAMES["tiles"][self.color][self.variety],
+            settings.FRAMES["tiles"][self.color][variety],
         )

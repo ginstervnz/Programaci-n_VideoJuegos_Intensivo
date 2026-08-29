@@ -24,8 +24,13 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter"
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "down")
 input_handler.InputHandler.set_mouse_click_action(input_handler.MOUSE_BUTTON_1, "click")
-
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p, "p")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_c, "c")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_b, "b")
 TITLE = "Match 3"
+
+# Activate cheats
+ENABLE_CHEATS = True
 
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
@@ -46,6 +51,8 @@ BACKGROUND_LOOPING_POINT = -1024 + VIRTUAL_WIDTH - 4 + 51
 
 LEVEL_TIME = 60
 
+TIMER_IDLE = 2.0
+
 BASE_DIR = Path(__file__).parent
 
 TEXTURES = {
@@ -53,6 +60,8 @@ TEXTURES = {
         BASE_DIR / "assets" / "graphics" / "background.png"
     ),
     "tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "match3.png"),
+   "power_tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "match3_lateral.png"),
+   "bomb_tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "match3_bom.png"),
 }
 
 FRAMES = {"tiles": generate_tile_frames(TEXTURES["tiles"])}
@@ -64,6 +73,10 @@ SOUNDS = {
     "match": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "match.wav"),
     "next-level": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "next-level.wav"),
     "select": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "select.wav"),
+    "error_move": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "error_sound.mp3"),
+    "power_spawn": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "creation_powerup1.mp3"),
+    "explosion": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "explosion_lateral.wav"),
+    "explosion2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "explosion_powerup2.mp3"),
 }
 
 pygame.mixer.music.load(BASE_DIR / "assets" / "sounds" / "music.mp3")

@@ -24,12 +24,19 @@ class Board:
         self.y = y
         self.matches: List[List[Tile]] = []
         self.tiles: List[List[Tile]] = []
-        self._initialize_tiles()
 
+        # Ensure the board starts with valid moves
+        while True:
+            self._initialize_tiles()
+            if self.has_possible_moves():
+                break
+
+        
     def render(self, surface: pygame.Surface) -> None:
         for row in self.tiles:
             for tile in row:
-                tile.render(surface, self.x, self.y)
+                if tile is not None:
+                    tile.render(surface, self.x, self.y)
 
     def _is_match_generated(self, i: int, j: int, color: int) -> bool:
         if (
@@ -68,7 +75,7 @@ class Board:
 
         color_to_match = tile.color
 
-        ## Check horizontal match
+        # Check horizontal match
         h_match: List[Tile] = []
 
         # Check left
@@ -87,7 +94,7 @@ class Board:
                     break
                 h_match.append(self.tiles[tile.i][j])
 
-        ## Check vertical match
+        # Check vertical match
         v_match: List[Tile] = []
 
         # Check top
@@ -152,59 +159,133 @@ class Board:
     def remove_matches(self) -> None:
         for match in self.matches:
             for tile in match:
-                self.tiles[tile.i][tile.j] = None
+                if self.tiles[tile.i][tile.j] is not None:
+                    self.tiles[tile.i][tile.j] = None
 
         self.matches = []
 
-    def get_falling_tiles(self) -> Tuple[Any, Dict[str, Any]]:
-        # List of tweens to create
-        tweens: Tuple[Tile, Dict[str, Any]] = []
+    def get_falling_tiles(self, columns: List[int] = None) -> Tuple[Any, Dict[str, Any]]:
+        tweens = []
+        cols_to_process = columns if columns is not None else range(settings.BOARD_WIDTH)
 
-        # for each column, go up tile by tile until we hit a space
-        for j in range(settings.BOARD_WIDTH):
+        for j in cols_to_process:
             space = False
             space_i = -1
             i = settings.BOARD_HEIGHT - 1
 
             while i >= 0:
                 tile = self.tiles[i][j]
-
-                # if our previous tile was a space
                 if space:
-                    # if the current tile is not a space
                     if tile is not None:
                         self.tiles[space_i][j] = tile
                         tile.i = space_i
-
-                        # set its prior position to None
                         self.tiles[i][j] = None
-
                         tweens.append((tile, {"y": tile.i * settings.TILE_SIZE}))
                         space = False
                         i = space_i
                         space_i = -1
                 elif tile is None:
                     space = True
-
                     if space_i == -1:
                         space_i = i
-
                 i -= 1
 
-        # create a replacement tiles at the top of the screen
-        for j in range(settings.BOARD_WIDTH):
-            for i in range(settings.BOARD_HEIGHT):
+        for j in cols_to_process:
+            missing_count = 0
+            for i in range(settings.BOARD_HEIGHT - 1, -1, -1):
                 tile = self.tiles[i][j]
-
                 if tile is None:
+                    missing_count += 1
                     tile = Tile(
-                        i,
-                        j,
+                        i, j,
                         random.randint(0, settings.NUM_COLORS - 1),
                         random.randint(0, settings.NUM_VARIETIES - 1),
                     )
-                    tile.y -= settings.TILE_SIZE
+                    tile.y = -missing_count * settings.TILE_SIZE
                     self.tiles[i][j] = tile
                     tweens.append((tile, {"y": tile.i * settings.TILE_SIZE}))
 
         return tweens
+
+
+    def reshuffle(self) -> list:
+        # Re-initialize board until possible moves exist
+        while True:
+            self._initialize_tiles()
+            if self.has_possible_moves():
+                break
+
+        tweens = []
+        for i in range(settings.BOARD_HEIGHT):
+            for j in range(settings.BOARD_WIDTH):
+                tile = self.tiles[i][j]
+                target_y = tile.y
+                tile.y -= settings.VIRTUAL_HEIGHT
+                tweens.append((tile, {"y": target_y}))
+                
+        return tweens
+
+    def has_possible_moves(self) -> bool:
+        for i in range(settings.BOARD_HEIGHT):
+            for j in range(settings.BOARD_WIDTH):
+                # Simulate right swap
+                if j < settings.BOARD_WIDTH - 1:
+                    if self._check_simulated_match(i, j, i, j + 1):
+                        return True
+                # Simulate left swap
+                if i < settings.BOARD_HEIGHT - 1:
+                    if self._check_simulated_match(i, j, i + 1, j):
+                        return True
+        return False
+
+    def get_hint_move(self) -> Optional[Tuple[Tile, Tile]]:
+        for i in range(settings.BOARD_HEIGHT):
+            for j in range(settings.BOARD_WIDTH):
+                if j < settings.BOARD_WIDTH - 1:
+                    if self._check_simulated_match(i, j, i, j + 1):
+                        return (self.tiles[i][j], self.tiles[i][j + 1])
+                if i < settings.BOARD_HEIGHT - 1:
+                    if self._check_simulated_match(i, j, i + 1, j):
+                        return (self.tiles[i][j], self.tiles[i + 1][j])
+        return None
+
+
+    def _check_simulated_match(self, i1: int, j1: int, i2: int, j2: int) -> bool:
+        # Swap virtually for simulation
+        self.tiles[i1][j1], self.tiles[i2][j2] = self.tiles[i2][j2], self.tiles[i1][j1]
+        
+        # Check for matches
+        has_match = self._has_match_at(i1, j1) or self._has_match_at(i2, j2)
+        
+        # Revert the board state
+        self.tiles[i1][j1], self.tiles[i2][j2] = self.tiles[i2][j2], self.tiles[i1][j1]
+        
+        return has_match
+
+    def _has_match_at(self, i: int, j: int) -> bool:
+        
+        if self.tiles[i][j] is None:
+            return False
+            
+        color = self.tiles[i][j].color
+
+        # Horizontal check
+        count = 1
+        for c in range(j - 1, -1, -1):
+            if self.tiles[i][c] is not None and self.tiles[i][c].color == color: count += 1
+            else: break
+        for c in range(j + 1, settings.BOARD_WIDTH):
+            if self.tiles[i][c] is not None and self.tiles[i][c].color == color: count += 1
+            else: break
+        if count >= 3: return True
+
+        # Vertical check
+        count = 1
+        for r in range(i - 1, -1, -1):
+            if self.tiles[r][j] is not None and self.tiles[r][j].color == color: count += 1
+            else: break
+        for r in range(i + 1, settings.BOARD_HEIGHT):
+            if self.tiles[r][j] is not None and self.tiles[r][j].color == color: count += 1
+            else: break
+            
+        return count >= 3
