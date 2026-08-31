@@ -209,9 +209,29 @@ class Board:
 
 
     def reshuffle(self) -> list:
+
+        #Keep the powers
+        powerup_locations = []
+        for i in range(settings.BOARD_HEIGHT):
+            for j in range(settings.BOARD_WIDTH):
+                tile = self.tiles[i][j]
+                if tile is not None:
+                    if getattr(tile, 'is_powerup', False):
+                        powerup_locations.append((i, j, 'powerup'))
+                    elif getattr(tile, 'is_color_bomb', False):
+                        powerup_locations.append((i, j, 'color_bomb'))
+
         # Re-initialize board until possible moves exist
         while True:
             self._initialize_tiles()
+
+            for loc in powerup_locations:
+                i, j, p_type = loc
+                if p_type == 'powerup':
+                    self.tiles[i][j].is_powerup = True
+                elif p_type == 'color_bomb':
+                    self.tiles[i][j].is_color_bomb = True
+
             if self.has_possible_moves():
                 break
 

@@ -23,7 +23,16 @@ class WalkState(BaseEntityState):
         self.entity.change_animation("walk")
 
     def update(self, dt: float) -> None:
-        if not self.entity.on_ground:
+        standing_on_block = False
+        
+        for item in self.entity.game_level.items:
+            if getattr(item, "frame_index", None) == 10 and item.active:
+                if self.entity.x + self.entity.width > item.x and self.entity.x < item.x + item.width:
+                    if abs((self.entity.y + self.entity.height) - item.y) <= 5:
+                        standing_on_block = True
+                        break
+
+        if not self.entity.on_ground and not standing_on_block:
             self.entity.change_state("fall")
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
