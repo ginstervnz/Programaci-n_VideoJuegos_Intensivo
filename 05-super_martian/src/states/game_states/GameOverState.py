@@ -41,11 +41,22 @@ class GameOverState(BaseState):
 
         y = 50
 
-        for color, amount in self.player.coins_counter.items():
+        for coin_id, amount in self.player.coins_counter.items():
+            
+            if amount == 0:
+                continue
+                
+            # Filter custom animated coins from default professor tilesets
+            if coin_id not in (54, 55, 61, 62):
+                texture = settings.TEXTURES["new_coins"]
+                frame = settings.FRAMES["new_coins"][coin_id] 
+            else:
+                texture = settings.TEXTURES["tiles"]
+                frame = settings.FRAMES["tiles"][coin_id]
             surface.blit(
-                settings.TEXTURES["tiles"],
+                texture,
                 (settings.VIRTUAL_WIDTH // 2 - 32, y),
-                settings.FRAMES["tiles"][color],
+                frame,
             )
             render_text(
                 surface,
@@ -67,9 +78,10 @@ class GameOverState(BaseState):
             )
             y += 20
 
+        # self.player.score naturally accumulates everything across levels
         render_text(
             surface,
-            f"Score: {self.player.score}",
+            f"Total Score: {self.player.score}",
             settings.FONTS["small"],
             settings.VIRTUAL_WIDTH // 2,
             y + 10,

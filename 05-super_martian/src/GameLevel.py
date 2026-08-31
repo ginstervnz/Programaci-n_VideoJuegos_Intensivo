@@ -26,34 +26,42 @@ class GameLevel:
         self.creatures = []
         self.items = []
 
+        # Load creatures
         for obj in self.tilemap.object_layers.get("creatures", []):
             self.add_creature(
                 {
                     "tile_index": obj.properties["tile_index"],
                     "x": obj.x,
-                    "y": obj.y,
-                    "width": obj.width,
-                    "height": obj.height,
+                    "y": self._calculate_y_offset(obj.y, num_level),
+                    "width": 16,  
+                    "height": 16, 
                 }
             )
 
+        # Load coins
         for obj in self.tilemap.object_layers.get("coins", []):
             self.add_item(
                 {
                     "item_name": "coins",
                     "frame_index": obj.properties["frame_index"],
                     "x": obj.x,
-                    "y": obj.y,
-                    "width": obj.width,
-                    "height": obj.height,
+                    "y": self._calculate_y_offset(obj.y, num_level),
+                    "width": 16, 
+                    "height": 16,
                 }
             )
+      
+    def _calculate_y_offset(self, original_y: float, num_level: int) -> float:
+        #Adjusts the Y position based on the specific grid offsets of levels 2 and 3
+        return original_y - 16 if num_level in (2, 3) else original_y
 
     def add_item(self, item_data: Dict[str, Any]) -> None:
         item_name = item_data.pop("item_name")
         definition = items.ITEMS[item_name][item_data["frame_index"]]
         definition.update(item_data)
-        self.items.append(GameItem(**definition))
+        new_item = GameItem(**definition)
+        new_item.level = self  
+        self.items.append(new_item)
 
     def add_creature(self, creature_data: Dict[str, Any]) -> None:
         definition = creatures.CREATURES[creature_data["tile_index"]]
@@ -79,6 +87,9 @@ class GameLevel:
         self.creatures = [
             creature for creature in self.creatures if not creature.is_dead
         ]
+
+        for item in self.items:
+            item.update(dt)
 
     def render(self, surface: pygame.Surface, camera: Any) -> None:
         self.tilemap.render(surface, camera)

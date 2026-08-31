@@ -42,12 +42,16 @@ class SnailWalkState(BaseEntityState):
         # Avoid falling off a ledge: peek at the tile just ahead of the
         # leading foot, one row below.
         tilemap = self.entity.tilemap
-        row = int(self.entity.y // tilemap.tile_height)
+        row = int((self.entity.y + self.entity.height) // tilemap.tile_height)
 
         if self.entity.vx > 0:
             col = int((self.entity.x + self.entity.width) // tilemap.tile_width)
         else:
             col = int(self.entity.x // tilemap.tile_width)
 
-        ahead = collision_type_at(tilemap, self.entity.COLLISION_LAYER, row + 1, col)
-        return ahead == CollisionType.NONE
+        try:
+            ahead = collision_type_at(tilemap, self.entity.COLLISION_LAYER, row, col)
+            return ahead == CollisionType.NONE
+        except IndexError:
+            return True
+        

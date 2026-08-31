@@ -31,7 +31,7 @@ class Creature(GameEntity):
             definition["texture_id"],
             game_level,
             states={
-                state_name: lambda sm: state_class(self, sm)
+                state_name: (lambda sm, s_class=state_class: s_class(self, sm))
                 for state_name, state_class in definition["states"].items()
             },
             animation_defs=definition["animation_defs"],
