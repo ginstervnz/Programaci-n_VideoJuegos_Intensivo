@@ -9,6 +9,7 @@ This file contains the class Dungeon.
 """
 
 import math
+import random
 from typing import Callable, TypeVar
 
 import pygame
@@ -17,6 +18,7 @@ from gale.timer import Timer
 
 import settings
 from src.world.Room import Room
+from src.world.BossRoom import BossRoom
 
 
 class Dungeon:
@@ -39,6 +41,7 @@ class Dungeon:
         self.camera_x = 0
         self.camera_y = 0
         self.shifting = False
+        
 
     def begin_shifting(self, shift_x: float, shift_y: float) -> None:
         """
@@ -47,8 +50,27 @@ class Dungeon:
         PlayerWalkState/PlayerPotWalkState.
         """
         self.shifting = True
-        self.next_room = Room(self.player, self.on_game_over)
 
+        #Logic to determine the next room based on the direction of the shift
+        entry_direction = "left"
+        if shift_x > 0:
+            entry_direction = "left"
+        elif shift_x < 0:
+            entry_direction = "right"
+        elif shift_y > 0:
+            entry_direction = "top"
+        elif shift_y < 0:
+            entry_direction = "bottom"
+
+
+        # Check if the player has the bow and decide whether to generate a BossRoom or a normal Room
+        has_bow = getattr(self.player, 'has_bow', False)
+        
+        # If the player has the bow and rolls, generate the BossRoom
+        if has_bow and random.random() < settings.BOSS_ROOM_CHANCE:
+            self.next_room = BossRoom(self.player, self.on_game_over, entry_direction)
+        else:
+            self.next_room = Room(self.player, self.on_game_over)
         # Start all doors in next room as open until we get in.
         for doorway in self.next_room.doorways:
             doorway.open = True
@@ -57,6 +79,11 @@ class Dungeon:
         self.next_room.adjacent_offset_y = shift_y
 
         player_x, player_y = self.player.x, self.player.y
+
+        # If we're leaving a BossRoom and entering a normal Room, switch the music back to the dungeon theme
+        if type(self.current_room).__name__ == "BossRoom" and type(self.next_room).__name__ == "Room":
+            pygame.mixer.music.load(settings.MUSIC["dungeon"])
+            pygame.mixer.music.play(-1)
 
         if shift_x > 0:
             player_x = settings.VIRTUAL_WIDTH + (

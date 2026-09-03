@@ -47,6 +47,7 @@ class Player(Entity):
         self.command_bindings.bind("move_down", press=MOVE_DOWN, release=STOP_MOVE_DOWN)
         self.command_bindings.bind("sword", press=SWORD)
         self.command_bindings.bind("enter", press=INTERACT)
+        self.bow_cooldown = 0.0
 
     def collides(self, target: Any) -> bool:
         """
@@ -66,3 +67,8 @@ class Player(Entity):
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         self.command_bindings.dispatch(self, input_id, input_data)
+
+    def update(self, dt: float) -> None:
+        super().update(dt) 
+        if getattr(self, 'bow_cooldown', 0) > 0:
+            self.bow_cooldown -= dt

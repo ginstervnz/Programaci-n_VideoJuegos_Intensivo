@@ -26,6 +26,8 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "move_dow
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "sword")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
+input_handler.InputHandler.set_keyboard_action(pygame.K_e, "interact")
+input_handler.InputHandler.set_keyboard_action(pygame.K_f, "shoot")
 
 TITLE = "The Legend of the Princess"
 
@@ -38,6 +40,12 @@ WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 
 TILE_SIZE = 16
+CHEST_SPAWN_CHANCE = 0.3
+BOW_SHOOT_DELAY = 0.8  # The player stands still for 0.8 seconds
+BOW_MAX_RANGE_TILES = 10
+BOSS_ROOM_CHANCE = 0.3 # Chance of generating a BossRoom 
+BOSS_IMMUNITY_DURATION = 5.0 # Duration of immunity for the boss after being hit by an arrow
+FIREBALL_COOLDOWN = 2.4 # Cooldown before the boss can shoot another fireball
 
 #
 # map constants
@@ -89,6 +97,19 @@ TEXTURES = {
     "character-pot-walk": pygame.image.load(
         BASE_DIR / "assets" / "graphics" / "character_pot_walk.png"
     ),
+    "chests": pygame.image.load("assets/graphics/chets.png"),
+    "bow": pygame.image.load("assets/graphics/bow.png"),
+    "arrows": pygame.image.load("assets/graphics/arrow.png"),
+    "boss-idle": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Idle_Boss.png"),
+    "boss-walk": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Walk_Boss.png"),
+    "boss-attack": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Attack_Boss.png"),
+    "boss-hit": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Get_Hit_Boss.png"),
+    "boss-death": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Death_Boss.png"),
+    "fireball": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Move_Fireball.png"),
+    "explosion": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Explosion.png"),
+    "shield": pygame.image.load(BASE_DIR / "assets" / "graphics" / "shild.png"),
+    "boss_key": pygame.image.load(BASE_DIR / "assets" / "graphics" / "key.png"),
+
 }
 
 # Used by Room's gale.tilemap.TileMap: TILE_* ids above are 1-based,
@@ -106,6 +127,18 @@ FRAMES = {
     "entities": frames.generate_frames(TEXTURES["entities"], 16, 16),
     "character-pot-lift": frames.generate_frames(TEXTURES["character-pot-lift"], 16, 32),
     "character-pot-walk": frames.generate_frames(TEXTURES["character-pot-walk"], 16, 32),
+    "chests": frames.generate_frames(TEXTURES["chests"], 18, 20),
+    "bow": frames.generate_frames(TEXTURES["bow"], 16, 16),
+    "arrows": frames.generate_frames(TEXTURES["arrows"], 16, 16),
+    "boss-idle": frames.generate_frames(TEXTURES["boss-idle"], TEXTURES["boss-idle"].get_width() // 9, TEXTURES["boss-idle"].get_height()),
+    "boss-walk": frames.generate_frames(TEXTURES["boss-walk"], TEXTURES["boss-walk"].get_width() // 9, TEXTURES["boss-walk"].get_height()),
+    "boss-attack": frames.generate_frames(TEXTURES["boss-attack"], TEXTURES["boss-attack"].get_width() // 16, TEXTURES["boss-attack"].get_height()),
+    "boss-hit": frames.generate_frames(TEXTURES["boss-hit"], TEXTURES["boss-hit"].get_width() // 3, TEXTURES["boss-hit"].get_height()),
+    "boss-death": frames.generate_frames(TEXTURES["boss-death"], TEXTURES["boss-death"].get_width() // 8, TEXTURES["boss-death"].get_height()),
+    "fireball": frames.generate_frames(TEXTURES["fireball"], TEXTURES["fireball"].get_width() // 6, TEXTURES["fireball"].get_height()),
+    "explosion": frames.generate_frames(TEXTURES["explosion"], TEXTURES["explosion"].get_width() // 7, TEXTURES["explosion"].get_height()),
+    "boss_key": frames.generate_frames(TEXTURES["boss_key"], 16, 16),
+    "shield": frames.generate_frames(TEXTURES["shield"], 16, 16),
 }
 
 
@@ -135,12 +168,16 @@ SOUNDS = {
         BASE_DIR / "assets" / "sounds" / "heart_taken.wav"
     ),
     "pot-wall": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pot_wall.wav"),
+    "open_chest": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "open_chest.mp3"),
+    "hit_boss": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hit_boss.mp3"),
 }
 
 MUSIC = {
     "start": str(BASE_DIR / "assets" / "sounds" / "start_music.mp3"),
     "dungeon": str(BASE_DIR / "assets" / "sounds" / "dungeon_music.mp3"),
     "game-over": str(BASE_DIR / "assets" / "sounds" / "game_over_music.mp3"),
+    "victory": str(BASE_DIR / "assets" / "sounds" / "Victory.mp3"),
+    "boss": str(BASE_DIR / "assets" / "sounds" / "Boss_Fight.mp3"),
 }
 
 COLOR_TITLE_SHADOW = (34, 34, 34)

@@ -15,15 +15,16 @@ import pygame
 import settings
 
 _SPEED = 150
-_MAX_TILES = 4
+
 
 
 class Projectile:
-    def __init__(self, obj: Any, direction: str) -> None:
+    def __init__(self, obj: Any, direction: str, max_tiles: int = 4) -> None:
         self.obj = obj
         self.direction = direction
         self.distance = 0.0
         self.dead = False
+        self.max_tiles = max_tiles #
 
     def get_collision_rect(self) -> pygame.Rect:
         return self.obj.get_collision_rect()
@@ -69,7 +70,7 @@ class Projectile:
 
         self.distance += d
 
-        if self.distance > _MAX_TILES * settings.TILE_SIZE:
+        if self.distance > self.max_tiles * settings.TILE_SIZE:
             self.dead = True
 
     def render(

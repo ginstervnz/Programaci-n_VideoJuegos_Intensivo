@@ -55,6 +55,7 @@ class PlayState(BaseState):
             "pot-walk": lambda sm: player_states.PlayerPotWalkState(
                 self.player, sm, self.dungeon
             ),
+            "shoot-bow": lambda sm: player_states.PlayerShootBowState(self.player, sm),
         }
         self.player.change_state("idle")
 
@@ -93,5 +94,46 @@ class PlayState(BaseState):
 
             health_left -= 2
 
+        if hasattr(self.dungeon.current_room, 'boss') and not self.dungeon.current_room.boss.dead:
+            boss = self.dungeon.current_room.boss
+            
+            # Draw the boss health bar at the bottom of the screen
+            bar_width = 100
+            bar_height = 10
+            x_pos = settings.VIRTUAL_WIDTH // 2 - bar_width // 2
+            y_pos = settings.VIRTUAL_HEIGHT - 20 
+            
+            
+            pygame.draw.rect(surface, (50, 50, 50), (x_pos, y_pos, bar_width, bar_height))
+            health_percentage = boss.health / 5.0 # Max health is 5 hits
+            fill_width = int(bar_width * health_percentage)
+            
+            if fill_width > 0:
+                pygame.draw.rect(surface, (200, 0, 0), (x_pos, y_pos, fill_width, bar_height))
+                
+            pygame.draw.rect(surface, (255, 255, 255), (x_pos, y_pos, bar_width, bar_height), 1)
+
+            cell_width = bar_width // 5
+            for i in range(1, 5):
+                line_x = x_pos + i * cell_width
+                pygame.draw.line(surface, (255, 255, 255), (line_x, y_pos), (line_x, y_pos + bar_height - 1))
+
+            # Draw the shield icon if the boss is immune
+            shield_frame = 1 if boss.is_immune else 2
+            shield_img = settings.TEXTURES["shield"]
+            shield_rect = settings.frame("shield", shield_frame)
+            surface.blit(shield_img, (x_pos - 20, y_pos - 2), shield_rect)
+
     def on_input(self, input_id: str, input_data: InputData) -> None:
-        self.player.on_input(input_id, input_data)
+        if input_id == "interact" and input_data.pressed:
+            # Trigger interaction with adjacent objects
+            self.dungeon.current_room.interact_adjacent_object(self.player)
+            
+        elif input_id == "shoot" and input_data.pressed:
+            # Trigger the bow shot if the player has collected it
+            if getattr(self.player, 'has_bow', False) and getattr(self.player, 'bow_cooldown', 0) <= 0:
+                self.player.change_state("shoot-bow")
+                
+        else:
+            # Pass any other inputs to the player's state machine
+            self.player.on_input(input_id, input_data)

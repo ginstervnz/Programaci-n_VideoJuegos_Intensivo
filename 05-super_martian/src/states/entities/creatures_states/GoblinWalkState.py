@@ -7,7 +7,7 @@ class GoblinWalkState(BaseEntityState):
     def enter(self, flipped: bool) -> None:
         self.entity.change_animation("walk")
         self.entity.flipped = not flipped 
-        self.entity.vx = self.entity.walk_speed if not flipped else -self.entity.walk_speed
+        self.entity.vx = -self.entity.walk_speed if self.entity.flipped else self.entity.walk_speed
 
     def update(self, dt: float) -> None:
         if self.check_boundary():

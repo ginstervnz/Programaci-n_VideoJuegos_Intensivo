@@ -25,7 +25,7 @@ class VictoryState(BaseState):
         else:
            
             Timer.after(2.0, lambda: self.state_machine.change(
-                "play", 
+                "level_transition", 
                 level=self.level + 1,
                 saved_score=self.player.score,
                 saved_coins=self.player.coins_counter
