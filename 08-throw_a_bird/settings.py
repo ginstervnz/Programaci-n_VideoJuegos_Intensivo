@@ -22,6 +22,10 @@ import pygame
 from gale import input_handler
 
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "cam_slower")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "cam_faster")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "split")
+
 
 # The only input this game needs: the primary mouse button, used both to
 # aim (drag starting near the bird) and to pan the camera (drag starting
@@ -65,6 +69,14 @@ FLOOR_Y = 1300
 def flip_y(defold_y: float) -> float:
     return FLOOR_Y - defold_y
 
+SOUNDS = {
+    "split": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"splip.wav"),
+    "bom": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"bom.mp3"),
+    "music": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"music.mp3"),
+    "stretch": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"stretch.mp3"),
+    "dash": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"dash.mp3"),
+}
+
 
 FONTS = {
     "small": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "RifficFree-Bold.ttf", 16),
@@ -105,6 +117,9 @@ TEXTURES = {
     "tree-2": _load("world", "Forest Tree 7.png"),
     "tree-3": _load("world", "Forest Tree 13.png"),
     "ground-strip": _load("world", "Walking Platforms 8.png"),
+    "parrot_blue": _load("characters", "parrot_blue.png"),
+    "parrot_black": _load("characters", "parrot_black.png"),
+    "parrot_yellow": _load("characters", "parrot_yelow.png"),
 }
 
 # ground1px.png is a single solid-color pixel used by the original as a

@@ -149,6 +149,10 @@ class Level:
         )
 
     @property
+    def enemies_alive(self) -> int:
+        return sum(1 for block in self.blocks if block.archetype in ENEMY_ARCHETYPES)
+
+    @property
     def bird_start(self) -> pygame.Vector2:
         x, y = BIRD_START_DEFOLD
         return pygame.Vector2(x, settings.flip_y(y))

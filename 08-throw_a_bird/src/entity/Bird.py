@@ -25,26 +25,28 @@ from src.definitions.entity import BIRD, density_for_circle
 
 
 class Bird:
-    def __init__(self, world: World, x: float, y: float) -> None:
-        self.radius: float = BIRD["radius"]
-        self.mass: float = BIRD["mass"]
+    def __init__(self, world: World, x: float, y: float, is_split: bool = False, color: str = "red") -> None:
+        self.is_split = is_split
+        self.radius: float = BIRD["radius"] * 0.7 if is_split else BIRD["radius"]
+        self.mass: float = BIRD["mass"] * 0.4 if is_split else BIRD["mass"]
+        
+        self.has_collided: bool = False
+        self.color = color
 
         density = density_for_circle(self.mass, self.radius)
         self.body = world.create_dynamic_body(
-            x,
-            y,
+            x, y,
             CircleShape(
-                radius=self.radius,
-                density=density,
-                friction=BIRD["friction"],
-                restitution=BIRD["restitution"],
+                radius=self.radius, density=density,
+                friction=BIRD["friction"], restitution=BIRD["restitution"],
             ),
         )
         self.body.set_damping(BIRD["linear_damping"], BIRD["angular_damping"])
         self.body.user_data = self
 
         self.initial_position = pygame.Vector2(x, y)
-        self.image = settings.TEXTURES[BIRD["sprite"]]
+        sprite_name = f"parrot_{self.color}" if self.color in ["blue", "black", "yellow"] else BIRD["sprite"]
+        self.image = settings.TEXTURES[sprite_name]
 
     @property
     def position(self) -> pygame.Vector2:
@@ -59,6 +61,16 @@ class Bird:
         self.body.angle = 0.0
         self.body.velocity = (0, 0)
         self.body.angular_velocity = 0.0
+        self.has_collided = False
+
+    def check_collision(self) -> None:
+        """It detects if it collides with something, in order to block the power."""
+        if self.has_collided:
+            return
+        for other in self.body.touching_bodies:
+            if other.user_data == "ground" or hasattr(other.user_data, "mass"):
+                self.has_collided = True
+                break
 
     def render(self, surface: pygame.Surface, camera) -> None:
         diameter = max(1, round(self.radius * 2 * camera.zoom))
