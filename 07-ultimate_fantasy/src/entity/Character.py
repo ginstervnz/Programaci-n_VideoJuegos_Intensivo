@@ -28,6 +28,7 @@ class Character(BattleEntity):
         self.current_exp: float = 0
         self.exp_to_level: float = 0
         self._next_exp_to_level()
+        self.rest_time: int = 0
 
     def calculate_stats(self) -> None:
         for _ in range(self.level):
@@ -59,9 +60,12 @@ class Character(BattleEntity):
                 self.magic += 1
                 magic_increase += 1
 
-        return hp_increase, attack_increase, defense_increase, magic_increase
+        speed_increase = random.randint(1, 2)
+        self.speed += speed_increase
 
-    def level_up(self) -> Tuple[int, int, int, int]:
+        return hp_increase, attack_increase, defense_increase, magic_increase, speed_increase
+
+    def level_up(self) -> Tuple[int, int, int, int, int]:
         self.level += 1
         self._next_exp_to_level()
         return self.stats_level_up()
@@ -81,6 +85,7 @@ class Character(BattleEntity):
             "dead": self.dead,
             "hp": self.hp,
             "attack": self.attack,
+            "speed": self.speed,
             "defense": self.defense,
             "magic": self.magic,
             "current_hp": self.current_hp,
@@ -89,6 +94,7 @@ class Character(BattleEntity):
             "map_x": self.map_x,
             "map_y": self.map_y,
             "direction": self.direction,
+            "rest_time": self.rest_time,
         }
 
     def load_dict(self, data: Dict[str, Any]) -> None:
@@ -96,6 +102,7 @@ class Character(BattleEntity):
         self.dead = data["dead"]
         self.hp = data["hp"]
         self.attack = data["attack"]
+        self.speed = data.get("speed", self.base_speed)
         self.defense = data["defense"]
         self.magic = data["magic"]
         self.current_hp = data["current_hp"]
@@ -108,3 +115,4 @@ class Character(BattleEntity):
         self.map_x = data["map_x"]
         self.map_y = data["map_y"]
         self.direction = data["direction"]
+        self.rest_time = data.get("rest_time", 0)

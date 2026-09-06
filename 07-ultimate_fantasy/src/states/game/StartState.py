@@ -33,8 +33,8 @@ class StartState(BaseState):
             140,
             48,
             items=[
-                ("Nueva partida", self._start_new_game),
-                ("Cargar partida", self._load_game),
+                ("New Game", self._start_new_game),
+                ("Load Game", self._load_game),
             ],
             font=settings.FONTS["small"],
         )

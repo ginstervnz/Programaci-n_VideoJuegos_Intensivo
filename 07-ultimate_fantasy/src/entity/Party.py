@@ -28,6 +28,8 @@ from src.states.entity.PartyWalkState import PartyWalkState
 class Party:
     def __init__(self, party_genders: Dict[int, str], world: TypeVar("World")) -> None:
         self.world = world
+        self.revives_left = 1
+        self.rests_left = 2
         # Kept around (not just consumed) so a save can be reconstructed:
         # rebuilding a Character needs the same gender-driven texture/
         # name/animations that were used to create it the first time.
@@ -178,14 +180,19 @@ class Party:
             "characters": {
                 str(k): character.to_dict() for k, character in self.characters.items()
             },
+            "revives_left": self.revives_left,
+            "rests_left": self.rests_left,
         }
 
     def load_dict(self, data: Dict[str, Any]) -> None:
         for k, character_data in data["characters"].items():
             self.characters[int(k)].load_dict(character_data)
 
+        self.revives_left = data.get("revives_left", 1)
+        self.rests_left = data.get("rests_left", 2)
+        
         leader = self.first_alive()
-
+       
         if leader is not None:
             self.set_position(leader.map_x, leader.map_y, leader.direction)
 

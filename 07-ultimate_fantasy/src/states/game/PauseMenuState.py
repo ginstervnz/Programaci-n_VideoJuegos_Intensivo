@@ -40,12 +40,13 @@ class PauseMenuState(BaseState):
             settings.VIRTUAL_WIDTH / 2 - 70,
             settings.VIRTUAL_HEIGHT / 2 - 48,
             140,
-            96,
+            120,
             items=[
-                ("Continuar", self.close),
-                ("Guardar partida", self._save),
-                ("Cargar otra partida", self._load_another),
-                ("Salir", self._quit),
+                ("Continue", self.close),
+                ("View Stats", self._show_stats_selection),
+                ("Save Game", self._save),
+                ("Load Another", self._load_another),
+                ("Quit", self._quit),
             ],
             font=settings.FONTS["small"],
         )
@@ -63,6 +64,21 @@ class PauseMenuState(BaseState):
             mode="save",
             on_select=self._do_save,
             on_close=self._cancel_slot_select,
+        )
+
+    def _show_stats_selection(self) -> None:
+        # import the PartySelectState here to avoid circular imports
+        from src.states.game.PartySelectState import PartySelectState
+
+        play_state = self.play_state
+        
+        # quit the PauseMenuState to return to the PlayState before pushing the PartySelectState
+        self.state_machine.pop()
+        
+        # Push the PartySelectState to allow the player to select a character and view their stats
+        self.state_machine.push(
+            PartySelectState(self.state_machine),
+            play_state=play_state
         )
 
     def _cancel_slot_select(self) -> None:

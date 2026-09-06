@@ -172,12 +172,44 @@ class World:
 
     def _try_interact(self) -> None:
         from src.states.game.DialogueState import DialogueState
+        from src.states.game.GuildState import GuildState
+        from src.states.game.FadeInState import FadeInState
+        from src.states.game.FadeOutState import FadeOutState
+        from src.states.game.ShowTextState import ShowTextState
 
         player = self.party.first_alive()
-
-        if player is None:
+        if player is None: 
             return
 
+        if self.current_region_name == "center":
+            if player.map_x in (3, 4, 5) and player.map_y == 6 and player.direction == "up":
+                self.freeze_party()
+                
+                def on_fade_in_complete() -> None:
+                    self.stack.push(GuildState(self.stack), party=self.party)
+                    
+                    def on_fade_out_complete() -> None:
+                        self.stack.push(
+                            ShowTextState(self.stack),
+                            color=(255, 255, 255),
+                            text="Guild",
+                            on_complete=lambda: None,
+                        )
+                        
+                    self.stack.push(
+                        FadeOutState(self.stack),
+                        color=(0, 0, 0),
+                        time=0.5,
+                        on_complete=on_fade_out_complete,
+                    )
+
+                self.stack.push(
+                    FadeInState(self.stack),
+                    color=(0, 0, 0),
+                    time=0.5,
+                    on_complete=on_fade_in_complete,
+                )
+                return
         for npc in self.current_region().npcs:
             dx = abs(npc.map_x - player.map_x)
             dy = abs(npc.map_y - player.map_y)

@@ -165,6 +165,11 @@ class PartyWalkState(PartyBaseState):
             party.world.move("down")
             return
 
+        if party.world.current_region_name == "center":
+            if 2 <= to_x <= 6 and 2 <= to_y <= 5:
+                party.change_state("idle")
+                return
+
         region = party.world.current_region()
         if region.tilemap.get_gid("fence", to_y - 1, to_x - 1) != settings.TILE_IDS["empty"]:
             party.change_state("idle")

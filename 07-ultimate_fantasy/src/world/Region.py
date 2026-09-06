@@ -138,7 +138,25 @@ class Region:
             _set_fence(width, y, TILE_IDS["empty"])
             _set_fence(width, y + 1, TILE_IDS["empty"])
             _set_fence(width, y + 2, TILE_IDS["border-top-right-fence"])
-
+            if self.is_town:
+                for cy in range(2, 6): 
+                    for cx in range(2, 7): 
+                        tile_id = TILE_IDS["empty"]
+                    
+                        if cy == 2: 
+                            if cx == 2: tile_id = TILE_IDS["top-left-fence"]
+                            elif cx == 6: tile_id = TILE_IDS["top-right-fence"]
+                            else: tile_id = TILE_IDS["top-fence"]
+                        elif cy == 5: 
+                            if cx == 2: tile_id = TILE_IDS["bottom-left-fence"]
+                            elif cx == 6: tile_id = TILE_IDS["bottom-right-fence"]
+                        
+                        else: 
+                            if cx == 2: tile_id = TILE_IDS["left-fence"]
+                            elif cx == 6: tile_id = TILE_IDS["right-fence"]
+                        
+                        if tile_id != TILE_IDS["empty"]:
+                            _set_fence(cx, cy, tile_id)
         # Step D: grass/flowers/NPC decoration layer.
         grass = self.tilemap.add_layer("grass")
         for y in range(1, height + 1):
@@ -146,7 +164,9 @@ class Region:
                 if y == 1 or y == height or x == 1 or x == width:
                     tile_id = TILE_IDS["empty"]
                 elif self.is_town:
-                    if random.random() < 0.2:
+                    if 2 <= x <= 6 and 2 <= y <= 5:
+                        tile_id = TILE_IDS["empty"]
+                    elif random.random() < 0.2:
                         tile_id = random.choice(TILE_IDS["flowers"])
                     else:
                         tile_id = TILE_IDS["empty"]
@@ -165,6 +185,8 @@ class Region:
                 grass[y - 1][x - 1] = tile_id
 
     def _create_npc(self, x: int, y: int) -> None:
+        if self.is_town and x <= 6 and y <= 5:
+            return
         width, height = self.tile_width, self.tile_height
 
         if x <= width / 2 and y <= height / 2:
@@ -204,6 +226,9 @@ class Region:
 
     def render(self, surface: pygame.Surface) -> None:
         self.tilemap.render(surface)
+        
+        if self.is_town:
+            surface.blit(settings.TEXTURES["gremio"], (settings.TILE_SIZE + 8, settings.TILE_SIZE))
 
         for npc in self.npcs:
             npc.render(surface)

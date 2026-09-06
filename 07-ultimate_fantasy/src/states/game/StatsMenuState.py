@@ -24,13 +24,13 @@ class StatsMenuState(BaseState):
     def enter(
         self,
         character: Any,
-        stats: Tuple[int, int, int, int],
+        stats: Tuple[int, int, int, int, int],
         on_close: Optional[Callable[[], None]] = None,
     ) -> None:
         self.character = character
         self._on_close = on_close or (lambda: None)
 
-        hp_increase, attack_increase, defense_increase, magic_increase = stats
+        hp_increase, attack_increase, defense_increase, magic_increase, speed_increase = stats
 
         rows = [
             ("HP", character.hp - hp_increase, hp_increase, character.hp),
@@ -42,6 +42,7 @@ class StatsMenuState(BaseState):
                 character.defense,
             ),
             ("Magic", character.magic - magic_increase, magic_increase, character.magic),
+            ("Speed", character.speed - speed_increase, speed_increase, character.speed),
         ]
         items = [
             (f"{name}: {previous} + {increase} = {current}", self.close)
@@ -50,9 +51,9 @@ class StatsMenuState(BaseState):
 
         self.menu = Menu(
             0,
-            settings.VIRTUAL_HEIGHT - 64,
+            settings.VIRTUAL_HEIGHT - 96,
             settings.VIRTUAL_WIDTH,
-            64,
+            96,
             items=items,
             show_cursor=False,
             font=settings.FONTS["small"],

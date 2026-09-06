@@ -1,4 +1,4 @@
-# The Legend of the Princess - Boss Fight Update 🐉
+# The Legend of the Princess - Boss Fight Update 
 
 This repository features an expanded and heavily polished version of the "Legend of the Princess" ARPG study case. The core highlight of this update is the implementation of a fully functional, multi-phase Boss encounter along with significant improvements to the game's progression loop and overall "Game Feel".
 

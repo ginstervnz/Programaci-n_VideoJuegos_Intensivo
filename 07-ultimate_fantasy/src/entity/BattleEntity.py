@@ -38,6 +38,17 @@ class BattleEntity(Entity):
 
         self.current_hp: float = self.hp
 
+        # --- SPEED AND ATB ---
+        self.base_speed: float = definition.get("baseSpeed", 10)
+        self.speed: float = self.base_speed
+        # Random speed
+        self.atb_timer: float = random.uniform(0.0, 5.0) 
+        self.max_atb: float = 100.0
+
+        # --- FATIGUE ---
+        self.turn_timer: float = 0.0 
+        self.max_fatigue: float = 15.0
+
     def damage(self, amount: float) -> None:
         self.current_hp -= amount
 
