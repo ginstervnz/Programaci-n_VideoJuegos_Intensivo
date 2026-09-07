@@ -479,8 +479,7 @@ class PlayState(BaseState):
                     self.yellow_charge_timer = 1.0
                     self.yellow_charge_pos = pygame.Vector2(b_pos.x, b_pos.y)
                     
-                    if "stretch" in settings.SOUNDS:
-                        settings.SOUNDS["stretch"].play()
+                   
                     
             elif input_id == "cam_slower" and self.flinging:
                 self.manual_cam = True
