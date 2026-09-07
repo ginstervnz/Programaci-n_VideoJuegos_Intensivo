@@ -92,6 +92,9 @@ class PlayState(BaseState):
 
         self.target_scores = {1: settings.TARGET_SCORE, 2: settings.TARGET_SCORE2, 3: settings.TARGET_SCORE3}
         self.current_target = self.target_scores.get(self.level, settings.TARGET_SCORE)
+        # Initialize the screen alpha for fade-in effect
+        self.screen_alpha = 255
+        Timer.tween(1.0, [(self, {"screen_alpha": 0})])
         
 
     def update(self, dt: float) -> None:
@@ -185,6 +188,12 @@ class PlayState(BaseState):
             (255, 255, 255),
             shadowed=True,
         )
+        # Render the fade-in overlay if screen_alpha is greater than 0
+        if getattr(self, "screen_alpha", 0) > 0:
+            overlay = pygame.Surface((settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(int(self.screen_alpha))
+            surface.blit(overlay, (0, 0))
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "pause" and input_data.pressed:

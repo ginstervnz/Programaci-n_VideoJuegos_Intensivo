@@ -41,6 +41,11 @@ class BattleMenuState(BaseState):
 
     def _run(self) -> None:
         from src.states.game.BattleMessageState import BattleMessageState
+        # --- ESCAPE PENALTY LOGIC ---
+        for character in self.battle_state.party.characters.values():
+            if not character.dead:
+                # Subtract 5 HP, but keep at least 1 HP to avoid dying from running away
+                character.current_hp = max(1, character.current_hp - 5)
 
         settings.SOUNDS["run"].play()
         self.state_machine.pop()

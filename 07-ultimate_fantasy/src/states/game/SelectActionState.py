@@ -42,13 +42,15 @@ class SelectActionState(BaseState):
         return lambda: self._select_action(action)
 
     def _select_action(self, action: Dict[str, Any]) -> None:
+        # Check stamina requirement
+        cost = action.get("fatigue_cost", 5)
+        if hasattr(self.entity, "turn_timer") and (self.entity.turn_timer + cost) > self.entity.max_fatigue:
+            settings.SOUNDS["error"].play()
+            return
+
         from src.states.game.SelectTargetState import SelectTargetState
 
-        if action["target_type"] == "enemy":
-            targets: List[Any] = self.battle_state.enemies
-        else:
-            targets = list(self.battle_state.party.characters.values())
-
+        targets: List[Any] = self.battle_state.enemies if action["target_type"] == "enemy" else list(self.battle_state.party.characters.values())
         self.state_machine.pop()
 
         if action["require_target"]:
@@ -60,20 +62,51 @@ class SelectActionState(BaseState):
             )
         else:
             alive_targets = [target for target in targets if not target.dead]
-            amount = action["func"](self.entity, alive_targets, action.get("strength"))
-            settings.SOUNDS[action["sound_effect"]].play()
+            original_x = self.entity.x
+            bump_x = original_x + (15 if hasattr(self.entity, "hpiv") else -15)
 
-            for target in alive_targets:
-                Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+            def hit_all_targets():
+                amount = action["func"](self.entity, alive_targets, action.get("strength"))
+                settings.SOUNDS[action["sound_effect"]].play()
+                
+                # Apply fatigue cost
+                if hasattr(self.entity, "turn_timer"):
+                    self.entity.turn_timer = min(self.entity.turn_timer + cost, self.entity.max_fatigue)
+                    if hasattr(self.entity, "rest_time"):
+                        self.entity.rest_time = self.entity.turn_timer
+                    if hasattr(self.entity, "fatigue_bar"):
+                        self.entity.fatigue_bar.value = self.entity.turn_timer
 
-            self._show_result(f"{action['name']} for {amount} HP to each target.")
+                for target in alive_targets:
+                    Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+                
+                self._apply_hit_effects(alive_targets, action)
+                Timer.tween(0.1, [(self.entity, {"x": original_x})], on_finish=lambda e=self.entity, ox=original_x: [setattr(e, "x", ox), self._show_result(f"{action['name']} for {amount} HP to each target.")])
+            
+            Timer.tween(0.1, [(self.entity, {"x": bump_x})], on_finish=hit_all_targets)
 
     def _resolve(self, action: Dict[str, Any], target: Any) -> None:
-        amount = action["func"](self.entity, target, action.get("strength"))
-        settings.SOUNDS[action["sound_effect"]].play()
-        Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+        original_x = self.entity.x
+        bump_x = original_x + (15 if hasattr(self.entity, "hpiv") else -15)
+        cost = action.get("fatigue_cost", 5)
 
-        self._show_result(f"{action['name']} for {amount} HP to {target.name}.")
+        def hit_target():
+            amount = action["func"](self.entity, target, action.get("strength"))
+            settings.SOUNDS[action["sound_effect"]].play()
+            
+            # Apply fatigue cost 
+            if hasattr(self.entity, "turn_timer"):
+                self.entity.turn_timer = min(self.entity.turn_timer + cost, self.entity.max_fatigue)
+                if hasattr(self.entity, "rest_time"):
+                    self.entity.rest_time = self.entity.turn_timer
+                if hasattr(self.entity, "fatigue_bar"):
+                    self.entity.fatigue_bar.value = self.entity.turn_timer
+
+            Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+            self._apply_hit_effects([target], action)
+            Timer.tween(0.1, [(self.entity, {"x": original_x})], on_finish=lambda e=self.entity, ox=original_x: [setattr(e, "x", ox), self._show_result(f"{action['name']} for {amount} HP to {target.name}.")])
+
+        Timer.tween(0.1, [(self.entity, {"x": bump_x})], on_finish=hit_target)
 
     def _show_result(self, message: str) -> None:
         from src.states.game.BattleMessageState import BattleMessageState
@@ -85,6 +118,35 @@ class SelectActionState(BaseState):
             on_close=self.on_action_selected,
         )
 
+
+    # --- Shake and Particles ---
+    def _apply_hit_effects(self, targets: list, action: dict) -> None:
+        name = action["name"]
+        if "Heal" in name:
+            colors = [(0, 255, 0, 255), (100, 255, 100, 255)]
+        elif "Flame" in name:
+            colors = [(255, 100, 0, 255), (255, 165, 0, 255)]
+        elif "Arrows" in name:
+            colors = [(200, 200, 200, 255), (255, 255, 255, 255)]
+        else:
+            colors = [(255, 0, 0, 255), (255, 100, 100, 255)]
+
+        def shake_target(t: Any, ox: float):
+            Timer.tween(0.05, [(t, {"x": ox + 4})], on_finish=lambda:
+                Timer.tween(0.05, [(t, {"x": ox - 4})], on_finish=lambda:
+                    Timer.tween(0.05, [(t, {"x": ox})], on_finish=lambda: setattr(t, "x", ox))
+                )
+            )
+
+        for target in targets:
+            self.battle_state.spawn_particles(target.x + target.width / 2, target.y + target.height / 2, colors)
+            
+            if hasattr(self, "entity") and target == self.entity:
+                continue
+    
+            shake_target(target, target.x)
+
+
     def _nothing(self) -> None:
         self.state_machine.pop()
         self.on_action_selected()
@@ -95,6 +157,9 @@ class SelectActionState(BaseState):
                 enemy.update(dt)
 
         self.menu.update(dt)
+        for effect in self.battle_state.particle_effects:
+            effect.system.update(dt)
+        self.battle_state.particle_effects = [e for e in self.battle_state.particle_effects if e.active]
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         if not input_data.pressed:

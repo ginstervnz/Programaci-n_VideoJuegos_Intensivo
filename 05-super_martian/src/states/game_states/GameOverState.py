@@ -20,6 +20,8 @@ import settings
 class GameOverState(BaseState):
     def enter(self, player) -> None:
         self.player = player
+        settings.SOUNDS["game_over"].stop()
+        settings.SOUNDS["game_over"].play()
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "enter" and input_data.pressed:

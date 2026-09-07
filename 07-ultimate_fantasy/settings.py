@@ -16,6 +16,7 @@ import pygame
 
 from gale import frames
 from gale import input_handler
+from gale import tilemap
 
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "move_left")
@@ -26,12 +27,13 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "space")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p, "pause")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_c, "continue")
 
 TITLE = "Ultimate Fantasy"
 
-# gale.save.SaveManager slot used for this game's single save file.
-SAVE_SLOT = "slot1"
+# gale.save.SaveManager slot names available for this game's 3 save slots
+# (StartState/PauseMenuState's "Cargar partida", PauseMenuState's "Guardar
+# partida" -- see SlotSelectState).
+SAVE_SLOTS = ["slot1", "slot2", "slot3"]
 
 BASE_DIR = pathlib.Path(__file__).parent
 
@@ -119,10 +121,17 @@ TEXTURES = {
     "man-eater-flower": pygame.image.load(
         BASE_DIR / "assets" / "graphics" / "enemies" / "man_eater_flower.png"
     ),
+    "gremio": pygame.image.load(BASE_DIR/"assets"/"graphics"/"gremio.png"),
+    "guild-interior": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Guild.png"),
 }
 
+# Shared by every gale.tilemap.TileMap in the game (world regions and
+# battle backgrounds alike): tile ids in TILE_IDS above are 1-based,
+# matching this tileset's default first_gid, so they double as gids
+# with no remapping.
+TILESET = tilemap.Tileset(TEXTURES["tiles"], TILE_SIZE, TILE_SIZE)
+
 FRAMES = {
-    "tiles": frames.generate_frames(TEXTURES["tiles"], 16, 16),
     "healer-female": frames.generate_frames(TEXTURES["healer-female"], 16, 18),
     "healer-male": frames.generate_frames(TEXTURES["healer-male"], 16, 18),
     "mage-female": frames.generate_frames(TEXTURES["mage-female"], 16, 18),
@@ -138,6 +147,7 @@ FRAMES = {
     "snake": frames.generate_frames(TEXTURES["snake"], 16, 16),
     "pumpking": frames.generate_frames(TEXTURES["pumpking"], 23, 23),
     "man-eater-flower": frames.generate_frames(TEXTURES["man-eater-flower"], 30, 38),
+    "gremio": frames.generate_frames(TEXTURES["gremio"], 64, 64),
 }
 
 
@@ -175,6 +185,11 @@ SOUNDS = {
     "levelup": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "levelup.wav"),
     "exp": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "exp.wav"),
     "the-end": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "the_end.mp3"),
+    "error": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "error.mp3"),
+    "heal": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "heal.mp3"),
+    "can_attack": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds"/ "can_attack.mp3"),
+    "hit_attack":  pygame.mixer.Sound(BASE_DIR / "assets" / "sounds"/ "hit_attack.mp3"),
+    "gremio": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds"/ "gremio.mp3"),
 }
 
 MUSIC_CHANNELS = {
@@ -184,6 +199,7 @@ MUSIC_CHANNELS = {
     "battle": None,
     "game-over": None,
     "the-end": None,
+    "gremio": None,
 }
 
 

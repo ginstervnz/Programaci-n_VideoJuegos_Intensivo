@@ -56,6 +56,10 @@ class BattleMessageState(BaseState):
         for enemy in self.battle_state.enemies:
             if not enemy.dead:
                 enemy.update(dt)
+        if hasattr(self.battle_state, "particle_effects"):
+            for effect in self.battle_state.particle_effects:
+                effect.system.update(dt)
+            self.battle_state.particle_effects = [e for e in self.battle_state.particle_effects if e.active]
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         if not self.can_input:

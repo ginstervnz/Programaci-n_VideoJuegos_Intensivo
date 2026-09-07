@@ -26,124 +26,166 @@ import settings
 
 
 class TakeTurnState(BaseState):
-    def enter(self, battle_state: Any) -> None:
+    def enter(self, battle_state: Any, entity: Any) -> None: # <--- RECIBE LA ENTITY
         self.battle_state = battle_state
+        self.entity = entity
         self.enemy_attacks_in_a_row = 0
-        self._take_party_turn(0)
+        
+        if self.entity.dead:
+            self.state_machine.pop()
+            return
 
+        if hasattr(self.entity, "hpiv"):
+            self._take_party_turn()
+        else:
+            self._take_enemy_turn()
+    
     def _party_keys(self):
         return sorted(self.battle_state.party.characters.keys())
 
+    # --- Shake and Particles ---
+    def _apply_hit_effects(self, targets: list, action: dict) -> None:
+        name = action["name"]
+        if "Heal" in name:
+            colors = [(0, 255, 0, 255), (100, 255, 100, 255)]
+        elif "Flame" in name:
+            colors = [(255, 100, 0, 255), (255, 165, 0, 255)]
+        elif "Arrows" in name:
+            colors = [(200, 200, 200, 255), (255, 255, 255, 255)]
+        else:
+            colors = [(255, 0, 0, 255), (255, 100, 100, 255)]
+    
+        def shake_target(t: Any, ox: float):
+            Timer.tween(0.05, [(t, {"x": ox + 4})], on_finish=lambda:
+                Timer.tween(0.05, [(t, {"x": ox - 4})], on_finish=lambda:
+                    Timer.tween(0.05, [(t, {"x": ox})], on_finish=lambda: setattr(t, "x", ox))
+                )
+            )
+
+        for target in targets:
+            self.battle_state.spawn_particles(target.x + target.width / 2, target.y + target.height / 2, colors)
+            
+            if hasattr(self, "entity") and target == self.entity:
+                continue
+                
+            shake_target(target, target.x)
+
     # -- party turns ---------------------------------------------------
 
-    def _take_party_turn(self, index: int) -> None:
-        keys = self._party_keys()
-
-        if index >= len(keys):
-            self._take_enemy_turn(0)
-            return
-
-        character = self.battle_state.party.characters[keys[index]]
-
-        if character.dead:
-            self._take_party_turn(index + 1)
-            return
-
+    def _take_party_turn(self) -> None:
         from src.states.game.BattleMessageState import BattleMessageState
 
         self.state_machine.push(
             BattleMessageState(self.state_machine),
             battle_state=self.battle_state,
-            message=f"Turn for {character.name}! Select an action.",
-            on_close=lambda: self._prompt_action(character, index),
+            message=f"Turn for {self.entity.name}! Select an action.",
+            on_close=self._prompt_action,
         )
-
-    def _prompt_action(self, character: Any, index: int) -> None:
+    
+    def _prompt_action(self) -> None:
         from src.states.game.SelectActionState import SelectActionState
-
-        def on_action_selected() -> None:
-            if all(enemy.dead for enemy in self.battle_state.enemies):
-                self._victory()
-            else:
-                self._take_party_turn(index + 1)
 
         self.state_machine.push(
             SelectActionState(self.state_machine),
             battle_state=self.battle_state,
-            entity=character,
-            on_action_selected=on_action_selected,
+            entity=self.entity,
+            on_action_selected=self._check_battle_end,
         )
 
     # -- enemy turns ----------------------------------------------------
 
-    def _take_enemy_turn(self, index: int) -> None:
-        enemies = self.battle_state.enemies
-
-        if index >= len(enemies):
-            self._take_party_turn(0)
-            return
-
-        enemy = enemies[index]
-
-        if enemy.dead:
-            self._take_enemy_turn(index + 1)
-            return
+    def _take_enemy_turn(self) -> None:
+        enemy = self.entity
 
         self.enemy_attacks_in_a_row += 1
         action = random.choice(enemy.actions)
+        cost = action.get("fatigue_cost", 5)
 
-        if action["target_type"] == "enemy":
-            targets = list(self.battle_state.party.characters.values())
-            target_label = "you"
-        else:
-            targets = self.battle_state.enemies
-            target_label = "them"
-
-        if action["require_target"]:
-            alive = [target for target in targets if not target.dead]
-            target = random.choice(alive)
-            amount = action["func"](enemy, target, action.get("strength"))
-            settings.SOUNDS[action["sound_effect"]].play()
-            Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
-            message = f"{enemy.name} used {action['name']} for {amount} HP on {target.name}."
-        else:
-            alive_targets = [target for target in targets if not target.dead]
-            amount = action["func"](enemy, alive_targets, action.get("strength"))
-            settings.SOUNDS[action["sound_effect"]].play()
-
-            for target in alive_targets:
-                Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
-
-            message = (
-                f"{enemy.name} used {action['name']} for {amount} HP on all of "
-                f"{target_label}."
-            )
-
-        if all(character.dead for character in self.battle_state.party.characters.values()):
-            self._faint()
+        # If the enemy is too fatigued to perform the action, it skips the turn to rest
+        if hasattr(enemy, "turn_timer") and (enemy.turn_timer + cost) > enemy.max_fatigue:
+            def show_rest_message():
+                from src.states.game.BattleMessageState import BattleMessageState
+                def on_message_close() -> None:
+                    self.enemy_attacks_in_a_row = 0
+                    self._check_battle_end()
+                
+                self.state_machine.push(
+                    BattleMessageState(self.state_machine),
+                    battle_state=self.battle_state,
+                    message=f"{enemy.name} is resting to recover stamina.",
+                    on_close=on_message_close,
+                )
+            
+            # Pause briefly so the player sees the turn change, then show the message
+            Timer.after(0.3, show_rest_message)
             return
 
-        from src.states.game.BattleMessageState import BattleMessageState
+        targets = list(self.battle_state.party.characters.values()) if action["target_type"] == "enemy" else self.battle_state.enemies
+        target_label = "you" if action["target_type"] == "enemy" else "them"
+        alive_targets = [target for target in targets if not target.dead]
+        
+        if not alive_targets:
+            self._check_battle_end()
+            return
 
-        def on_message_close() -> None:
-            if (
-                self.enemy_attacks_in_a_row < 3
-                and enemy.klass == "boss"
-                and random.randint(1, 3) == 1
-            ):
-                self._take_enemy_turn(index)
+        original_x = enemy.x
+        bump_x = original_x - 15 
+
+        def hit_targets():
+            # Update Enemy UI 
+            if hasattr(enemy, "turn_timer"):
+                enemy.turn_timer = min(enemy.turn_timer + cost, enemy.max_fatigue)
+                if hasattr(enemy, "fatigue_bar"):
+                    enemy.fatigue_bar.value = enemy.turn_timer
+
+            if action["require_target"]:
+                target = random.choice(alive_targets)
+                amount = action["func"](enemy, target, action.get("strength"))
+                settings.SOUNDS[action["sound_effect"]].play()
+                Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+                self._apply_hit_effects([target], action)
+                message = f"{enemy.name} used {action['name']} for {amount} HP on {target.name}."
             else:
-                self.enemy_attacks_in_a_row = 0
-                self._take_enemy_turn(index + 1)
+                amount = action["func"](enemy, alive_targets, action.get("strength"))
+                settings.SOUNDS[action["sound_effect"]].play()
+                for target in alive_targets:
+                    Timer.tween(0.5, [(target.energy_bar, {"value": target.current_hp})])
+                self._apply_hit_effects(alive_targets, action)
+                message = f"{enemy.name} used {action['name']} for {amount} HP on all of {target_label}."
+            
+            Timer.tween(0.1, [(enemy, {"x": original_x})], on_finish=lambda e=enemy, ox=original_x: [setattr(e, "x", ox), show_message(message)])
 
-        self.state_machine.push(
-            BattleMessageState(self.state_machine),
-            battle_state=self.battle_state,
-            message=message,
-            on_close=on_message_close,
-        )
+        def show_message(message: str):
+            from src.states.game.BattleMessageState import BattleMessageState
+            def on_message_close() -> None:
+                if self.enemy_attacks_in_a_row < 3 and enemy.klass == "boss" and random.randint(1, 3) == 1:
+                    self._take_enemy_turn()
+                else:
+                    self.enemy_attacks_in_a_row = 0
+                    self._check_battle_end()
+            self.state_machine.push(
+                BattleMessageState(self.state_machine),
+                battle_state=self.battle_state,
+                message=message,
+                on_close=on_message_close,
+            )
+
+        Timer.tween(0.1, [(enemy, {"x": bump_x})], on_finish=hit_targets)
+
 
     # -- victory / experience --------------------------------------------
+
+    def _check_battle_end(self) -> None:
+        all_enemies_dead = all(e.dead for e in self.battle_state.enemies)
+        all_party_dead = all(c.dead for c in self.battle_state.party.characters.values())
+
+        if all_enemies_dead:
+            self._victory()
+        elif all_party_dead:
+            self._faint()
+        else:
+            self.state_machine.pop()
+
 
     def _victory(self) -> None:
         settings.stop_music("battle")
@@ -247,6 +289,11 @@ class TakeTurnState(BaseState):
             on_close=lambda: self._inc_exp(index + 1, opponent_level),
         )
 
+    def update(self, dt: float) -> None:
+        for effect in self.battle_state.particle_effects:
+            effect.system.update(dt)
+        self.battle_state.particle_effects = [e for e in self.battle_state.particle_effects if e.active]
+
     def _fade_out(self) -> None:
         if self._victory_channel is not None:
             self._victory_channel.stop()
@@ -257,11 +304,36 @@ class TakeTurnState(BaseState):
         if self.battle_state.final_boss:
 
             def on_complete() -> None:
-                settings.SOUNDS["the-end"].play()
                 # Pops this lingering TakeTurnState, then the BattleState
-                # underneath it (matches the original's "pop twice").
+                # underneath it (matches the original's "pop twice"). The
+                # second pop runs BattleState.exit(), which always calls
+                # the on_exit it was pushed with (see
+                # PartyWalkState._trigger_encounter) -- for a NORMAL battle
+                # that's the whole point (it un-pauses the overworld's
+                # "world"/"town" music the encounter had merely paused,
+                # not stopped, so walking around resumes right where the
+                # music left off), but here there's no overworld to return
+                # to: the very next thing on screen is TheEndState. Without
+                # silencing what that on_exit just resumed, it played
+                # underneath "the-end" for the rest of the game -- the two
+                # overlapping tracks this whole fix is about. _victory
+                # already stopped "battle" and _fade_out already stopped
+                # the "victory" jingle, so this only has the resumed
+                # overworld music left to clean up, but stopping "battle"
+                # again too is harmless and keeps this correct even if
+                # that ordering ever changes.
                 self.state_machine.pop()
                 self.state_machine.pop()
+                settings.stop_music("battle")
+                settings.stop_music("world")
+                settings.stop_music("town")
+                # A bare SOUNDS["the-end"].play() (the original code here)
+                # starts a plain, untracked Sound channel -- unlike every
+                # other music cue in this game, it was never routed
+                # through play_music, so nothing could stop it the same
+                # way the stops above stop everything else (see
+                # TheEndState's restart handler).
+                settings.play_music("the-end")
 
                 from src.states.game.TheEndState import TheEndState
 

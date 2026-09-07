@@ -25,6 +25,7 @@ class SuperMartian(Game):
                 "play": game_states.PlayState,
                 "game_over": game_states.GameOverState,
                 "pause": game_states.PauseState,
+                "level_transition": game_states.LevelTransitionState,
                 "victory": game_states.VictoryState,
             }
         )

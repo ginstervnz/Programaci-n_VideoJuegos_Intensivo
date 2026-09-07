@@ -41,3 +41,25 @@ BAR_THEME = Theme(
     accent_color=pygame.Color(189, 32, 32),
     padding=0,
 )
+
+# Theme for the Fatigue bar, using a green accent color
+FATIGUE_THEME = Theme(
+    font=settings.FONTS["small"],
+    text_color=pygame.Color(255, 255, 255),
+    background_color=pygame.Color(0, 0, 0),
+    border_color=pygame.Color(0, 0, 0),
+    border_width=1,
+    accent_color=pygame.Color(50, 205, 50),
+    padding=0,
+)
+
+# Theme for the Speed bar, using a cyan accent color
+ATB_THEME = Theme(
+    font=settings.FONTS["small"],
+    text_color=pygame.Color(255, 255, 255),
+    background_color=pygame.Color(0, 0, 0),
+    border_color=pygame.Color(0, 0, 0),
+    border_width=1,
+    accent_color=pygame.Color(0, 200, 255), # Cyan color for Speed/ATB
+    padding=0,
+)

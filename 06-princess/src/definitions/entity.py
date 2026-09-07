@@ -177,4 +177,15 @@ ENTITY_DEFS: Dict[str, Dict[str, Any]] = {
             "idle-up": {"frames": [95]},
         },
     },
+    "fire_worm": {
+        "walk_speed": 15, 
+        "animations": {
+            "idle-down": {"frames": [1, 2, 3, 4, 5, 6, 7, 8, 9], "interval": 0.1, "texture": "boss-idle"},
+            "walk-down": {"frames": [1, 2, 3, 4, 5, 6, 7, 8, 9], "interval": 0.15, "texture": "boss-walk"},
+            "attack-down": {"frames": list(range(1, 17)), "interval": 0.08, "texture": "boss-attack", "loops": 1},
+            "hit-down": {"frames": [1, 2, 3], "interval": 0.1, "texture": "boss-hit", "loops": 1},
+            "death-down": {"frames": [1, 2, 3, 4, 5, 6, 7, 8], "interval": 0.15, "texture": "boss-death", "loops": 1},
+        }
+    },
+
 }

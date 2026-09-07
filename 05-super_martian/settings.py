@@ -49,9 +49,9 @@ CAMERA_FOLLOW_RATE = 8.0
 NUM_LEVELS = 3
 TIME_LEVELS = 80
 POINTS_KILL_ENEMY = 40
-TARGET_SCORE = 10
-TARGET_SCORE2 = 200
-TARGET_SCORE3 = 500
+TARGET_SCORE = 250
+TARGET_SCORE2 = 500
+TARGET_SCORE3 = 1000
 
 BASE_DIR = pathlib.Path(__file__).parent
 
@@ -105,6 +105,7 @@ SOUNDS = {
     "reveal": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "reveal.mp3"),
     "select": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pickup_coin.wav"),
     "victory": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "victory.mp3"),
+    "game_over": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "game-over.wav"),
 }
 
 SOUNDS["pickup_coin"].set_volume(0.5)
