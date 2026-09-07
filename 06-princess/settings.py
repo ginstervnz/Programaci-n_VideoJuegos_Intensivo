@@ -40,10 +40,10 @@ WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 
 TILE_SIZE = 16
-CHEST_SPAWN_CHANCE = 0.3
+CHEST_SPAWN_CHANCE = 0.2
 BOW_SHOOT_DELAY = 0.8  # The player stands still for 0.8 seconds
 BOW_MAX_RANGE_TILES = 10
-BOSS_ROOM_CHANCE = 0.3 # Chance of generating a BossRoom 
+BOSS_ROOM_CHANCE = 0.2 # Chance of generating a BossRoom 
 BOSS_IMMUNITY_DURATION = 5.0 # Duration of immunity for the boss after being hit by an arrow
 FIREBALL_COOLDOWN = 2.4 # Cooldown before the boss can shoot another fireball
 

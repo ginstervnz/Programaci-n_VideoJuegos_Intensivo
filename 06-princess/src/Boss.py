@@ -226,8 +226,8 @@ class Boss(Entity):
                 surface.blit(image, (visual_x, visual_y), frame_rect)
 
         # Draw the collision rectangle for debugging purposes
-        rect = pygame.Rect(self.x + adjacent_offset_x, self.y + adjacent_offset_y, self.width, self.height)
-        pygame.draw.rect(surface, (255, 0, 0), rect, 1)
+        #rect = pygame.Rect(self.x + adjacent_offset_x, self.y + adjacent_offset_y, self.width, self.height)
+        #pygame.draw.rect(surface, (255, 0, 0), rect, 1)
 
     def damage(self, amount: int) -> None:
         if not self.is_immune:

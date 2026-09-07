@@ -75,8 +75,12 @@ SOUNDS = {
     "music": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"music.mp3"),
     "stretch": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"stretch.mp3"),
     "dash": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"dash.mp3"),
+    "block_break": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"detrution.mp3"),
+    "alien_death": pygame.mixer.Sound(BASE_DIR/"assets"/"sounds"/"enemy_dead.wav"),
 }
 
+SOUNDS["block_break"].set_volume(0.4)
+SOUNDS["alien_death"].set_volume(0.4)
 
 FONTS = {
     "small": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "RifficFree-Bold.ttf", 16),

@@ -143,6 +143,34 @@ class PlayState(BaseState):
         self.level.fixed_update()
 
     def update(self, dt: float) -> None:
+        for block in self.level.blocks:
+            if block.destroyed and not getattr(block, "fx_played", False):
+                block.fx_played = True 
+                
+                is_alien = block.archetype.startswith("alien")
+                
+                if is_alien and "alien_death" in settings.SOUNDS:
+                    settings.SOUNDS["alien_death"].play()
+                elif not is_alien and "block_break" in settings.SOUNDS:
+                    settings.SOUNDS["block_break"].play()
+                    
+                num_particles = random.randint(5, 8)
+                for _ in range(num_particles):
+                    p_angle = random.uniform(0, math.pi * 2)
+                    speed = random.uniform(30, 80)
+                    
+                    if is_alien:
+                        color = random.choice([(100, 255, 100), (50, 200, 50), (200, 50, 50)])
+                    else:
+                        color = random.choice([(139, 69, 19), (160, 82, 45), (105, 105, 105)])
+                        
+                    self.particles.append({
+                        'pos': pygame.Vector2(block.body.position.x, block.body.position.y),
+                        'vel': pygame.Vector2(math.cos(p_angle)*speed, math.sin(p_angle)*speed),
+                        'timer': random.uniform(0.2, 0.4),
+                        'color': color
+                    })
+
         self.level.update(dt)
 
         if self.level.all_enemies_defeated:
