@@ -25,6 +25,8 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "cam_slower")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "cam_faster")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "split")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_w, "zoom_in")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_s, "zoom_out")
 
 
 # The only input this game needs: the primary mouse button, used both to

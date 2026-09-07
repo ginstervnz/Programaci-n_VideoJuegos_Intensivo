@@ -172,7 +172,8 @@ class PlayState(BaseState):
                     })
 
         self.level.update(dt)
-
+        if getattr(self, "trajectory_timer", 0) > 0:
+            self.trajectory_timer -= dt
         if self.level.all_enemies_defeated:
             self.victory_timer -= dt
             if self.victory_timer <= 0:
@@ -207,9 +208,19 @@ class PlayState(BaseState):
                 b.body.velocity = (0, 0)
                 b.body.angular_velocity = 0.0
                 self.idle_frames = 0 
-                diff = self.yellow_target_pos - b.position
+                if getattr(self, "yellow_target_alien", None) and not self.yellow_target_alien.destroyed:
+                    current_target = pygame.Vector2(self.yellow_target_alien.body.position.x, self.yellow_target_alien.body.position.y)
+                else:
+                    current_target = pygame.Vector2(b.position.x + 1000, b.position.y)
+
+                diff_raw = current_target - b.position
+                dist = diff_raw.length()
+                speed = 2500 
+                time_to_target = dist / speed if speed > 0 else 0
+                g_y = settings.GRAVITY[1] 
+                drop_compensation = 0.5 * g_y * (time_to_target ** 2)
+                diff = pygame.Vector2(diff_raw.x, diff_raw.y - drop_compensation)
                 b.body.angle = math.atan2(diff.y, diff.x)
-                
                 self.particles.append({
                     'pos': pygame.Vector2(b.position.x + random.uniform(-20, 20), b.position.y + random.uniform(-20, 20)),
                     'vel': pygame.Vector2(0, 0),
@@ -224,9 +235,7 @@ class PlayState(BaseState):
                         settings.SOUNDS["dash"].play()
                     
                     direction = diff.normalize() if diff.length() > 0 else pygame.Vector2(1, 0)
-                    
-                    dash_power = 3500 * b.mass
-                    b.body.apply_impulse(direction.x * dash_power, direction.y * dash_power)
+                    b.body.velocity = (direction.x * speed, direction.y * speed)
 
         for p in reversed(self.particles):
             p['pos'] += p['vel'] * dt
@@ -323,6 +332,15 @@ class PlayState(BaseState):
         if not self.birds:
             return
             
+        if self.aiming:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                self.camera_zoom_ratio = min(2.2, self.camera_zoom_ratio + 1.0 * dt)
+            elif keys[pygame.K_s]:
+                self.camera_zoom_ratio = max(CAMERA_ZOOM_MIN, self.camera_zoom_ratio - 1.0 * dt)
+            self.camera.zoom = 1.0 / self.camera_zoom_ratio
+            return
+            
         distance = abs(self.birds[0].position.x - self.birds[0].initial_position.x)
         reach = max(1.0, self.birds[0].initial_position.x)
         
@@ -344,13 +362,19 @@ class PlayState(BaseState):
         
         for b in self.birds:
             b.render(surface, self.camera)
+
+        if getattr(self, "is_yellow_charging", False) and self.birds:
+            b_screen = self.camera.world_to_screen(self.birds[0].position)
+            if getattr(self, "yellow_target_alien", None) and not self.yellow_target_alien.destroyed:
+                t_screen = self.camera.world_to_screen(self.yellow_target_alien.body.position)
+                pygame.draw.line(surface, (255, 50, 50), b_screen, t_screen, 1)
             
         for p in self.particles:
             screen_pos = self.camera.world_to_screen(p['pos'])
             pygame.draw.circle(surface, p['color'], screen_pos, 4)
 
-        if self.aiming:
-            self._render_pull_line(surface)
+        if self.aiming or getattr(self, "trajectory_timer", 0) > 0:
+            self._render_aiming_lines(surface)
         render_text(surface, HUD_TEXT, settings.FONTS["small"], 10, 10, (70, 55, 40))
         
         self.camera.x -= shake_x
@@ -359,33 +383,54 @@ class PlayState(BaseState):
         enemies_text = f"Left enemies: {self.level.enemies_alive}"
         render_text(surface, enemies_text, settings.FONTS["medium"], settings.VIRTUAL_WIDTH - 190, 10, (200, 50, 50))
 
-    def _render_pull_line(self, surface: pygame.Surface) -> None:
-        start = self.camera.world_to_screen(self.birds[0].initial_position)
-        end = self.camera.world_to_screen(self.birds[0].position)
-        pygame.draw.line(surface, (110, 75, 40), start, end, 3)
+    def _render_aiming_lines(self, surface: pygame.Surface) -> None:
+        if self.aiming:
+            start = self.camera.world_to_screen(self.birds[0].initial_position)
+            end = self.camera.world_to_screen(self.birds[0].position)
+            pygame.draw.line(surface, (110, 75, 40), start, end, 3)
+
+            pull = self.birds[0].initial_position - self.birds[0].position
+            if pull.length() >= 5:
+                v0 = pull * FLING_IMPULSE_SCALE
+                g_x, g_y = settings.GRAVITY
+                start_pos = self.birds[0].position 
+
+                for i in range(1, 16):
+                    t = i * 0.08  
+                    p_x = start_pos.x + v0.x * t + 0.5 * g_x * (t ** 2)
+                    p_y = start_pos.y + v0.y * t + 0.5 * g_y * (t ** 2)
+                    screen_pos = self.camera.world_to_screen(pygame.Vector2(p_x, p_y))
+                    pygame.draw.circle(surface, (255, 255, 255), screen_pos, 4)
+        elif getattr(self, "trajectory_timer", 0) > 0 and hasattr(self, "saved_trajectory"):
+            for p in self.saved_trajectory:
+                screen_pos = self.camera.world_to_screen(p)
+                pygame.draw.circle(surface, (200, 200, 200), screen_pos, 4)
 
     def _split_bird(self) -> None:
         original = self.birds[0]
         v = original.body.velocity
         pos = original.position
         color = original.color
+        dir_norm = v.normalize() if v.length() > 0 else pygame.Vector2(1, 0)
+        perp = pygame.Vector2(-dir_norm.y, dir_norm.x)
+        offset = original.radius * 2.5 
+        
         self.world.destroy_body(original.body)
         self.birds.clear()
         
         angle = math.pi / 6
+        
         b_center = Bird(self.world, pos.x, pos.y, is_split=True, color=color)
         b_center.body.velocity = (v.x, v.y)
         
-        
         v1_x = v.x * math.cos(angle) - v.y * math.sin(angle)
         v1_y = v.x * math.sin(angle) + v.y * math.cos(angle)
-        b1 = Bird(self.world, pos.x, pos.y, is_split=True, color=color)
+        b1 = Bird(self.world, pos.x + perp.x * offset, pos.y + perp.y * offset, is_split=True, color=color)
         b1.body.velocity = (v1_x, v1_y)
-        
         
         v2_x = v.x * math.cos(-angle) - v.y * math.sin(-angle)
         v2_y = v.x * math.sin(-angle) + v.y * math.cos(-angle)
-        b2 = Bird(self.world, pos.x, pos.y, is_split=True, color=color)
+        b2 = Bird(self.world, pos.x - perp.x * offset, pos.y - perp.y * offset, is_split=True, color=color)
         b2.body.velocity = (v2_x, v2_y)
         
         self.birds.extend([b_center, b1, b2])
@@ -410,21 +455,25 @@ class PlayState(BaseState):
                     self.bomb_primed = True
                     self.bomb_timer = 3.0
                 elif self.birds[0].color == "yellow" and not getattr(self, "is_dashing", False) and not getattr(self, "is_yellow_charging", False):
-                    b_pos = self.birds[0].position
+                    b_pos = pygame.Vector2(self.birds[0].position.x, self.birds[0].position.y)
                     nearest_enemy = None
                     min_dist = float('inf')
                     
                     for block in self.level.blocks:
-                        if block.archetype.startswith("alien") and not block.destroyed:
-                            dist = (block.body.position - b_pos).length_squared()
+                        if "alien" in getattr(block, "archetype", "").lower() and not block.destroyed:
+                            enemy_pos = pygame.Vector2(block.body.position.x, block.body.position.y)
+                            
+                            if enemy_pos.y > 1500:
+                                continue
+                                
+                            dist = (enemy_pos - b_pos).length_squared()
                             if dist < min_dist:
                                 min_dist = dist
                                 nearest_enemy = block
-                                
                     if nearest_enemy:
-                        self.yellow_target_pos = pygame.Vector2(nearest_enemy.body.position.x, nearest_enemy.body.position.y)
+                        self.yellow_target_alien = nearest_enemy
                     else:
-                        self.yellow_target_pos = pygame.Vector2(b_pos.x + 1000, b_pos.y)
+                        self.yellow_target_alien = None
 
                     self.is_yellow_charging = True
                     self.yellow_charge_timer = 1.0
@@ -475,8 +524,17 @@ class PlayState(BaseState):
         if pull.length() < 5:
             self.birds[0].reset()
             return
-        # Scaled by the bird's own mass so it cancels out of the
-        # resulting delta-v -- see the FLING_IMPULSE_SCALE docstring.
+        self.saved_trajectory = []
+        v0 = pull * FLING_IMPULSE_SCALE
+        g_x, g_y = settings.GRAVITY
+        start_pos = self.birds[0].position
+        for i in range(1, 16):
+            t = i * 0.08  
+            p_x = start_pos.x + v0.x * t + 0.5 * g_x * (t ** 2)
+            p_y = start_pos.y + v0.y * t + 0.5 * g_y * (t ** 2)
+            self.saved_trajectory.append(pygame.Vector2(p_x, p_y))
+            
+        self.trajectory_timer = 0.6
         scale = FLING_IMPULSE_SCALE * self.birds[0].mass
         self.birds[0].body.apply_impulse(pull.x * scale, pull.y * scale)
         self.flinging = True
